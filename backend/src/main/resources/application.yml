@@ -1,0 +1,53 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: ai-calorie-tracker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/calorie_tracker_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration-ms: 86400000 # 24 hours
+  refresh-expiration-ms: 604800000 # 7 days
+
+gemini:
+  api-key: ${GEMINI_API_KEY:demo_gemini_api_key}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  api-url: https://generativelanguage.googleapis.com/v1beta/models
+
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:calorie-tracker-meals}
+    region: ${AWS_REGION:ap-southeast-1}
+    access-key: ${AWS_ACCESS_KEY_ID:mock_access_key}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:mock_secret_key}
+    enabled: ${AWS_S3_ENABLED:false}
+
+storage:
+  local-dir: ${LOCAL_STORAGE_DIR:./uploads}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
