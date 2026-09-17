@@ -270,7 +270,20 @@ AI-Calorie-Meal-Tracker/
 
 ---
 
-## 🗺️ 8. Lộ trình phát triển (Roadmap)
+---
+
+## 📚 8. Tài liệu dự án & Thiết kế (Documentation & Figma Design)
+
+* 🎨 **Thiết kế UI/UX (Figma Canvas):** [Figma Design - AI Calorie Meal Tracker](https://www.figma.com/design/9EWSQ8wvef3FiUdsTeDv7P/AI-Calorie-Meal-Tracker?node-id=0-1&p=f&t=svMPikBiSviLB8xj-0)
+* 📋 **Tài liệu đặc tả thiết kế:** [`docs/designs/figma-design.md`](docs/designs/figma-design.md)
+* 📄 **Product Requirements Document (PRD):** [`docs/prd/prd-ai-calorie-meal-tracker.md`](docs/prd/prd-ai-calorie-meal-tracker.md)
+* 📱 **Mobile Functional Requirements (FRD):** [`docs/prd/frd-mobile-app.md`](docs/prd/frd-mobile-app.md)
+* 💡 **Product Discovery:** [`docs/discovery/product-discovery.md`](docs/discovery/product-discovery.md)
+* ⚙️ **Chi tiết các tính năng:** [`docs/features/feature-specifications.md`](docs/features/feature-specifications.md)
+
+---
+
+## 🗺️ 9. Lộ trình phát triển (Roadmap)
 
 - [x] Thiết kế kiến trúc hệ thống và xây dựng Database Schema
 - [x] Tích hợp Authentication (JWT, Google OAuth2) & BMR/TDEE Calculation

@@ -1,6 +1,8 @@
 # TÀI LIỆU YÊU CẦU SẢN PHẨM (PRODUCT REQUIREMENTS DOCUMENT - PRD)
 ## DỰ ÁN: AI CALORIE & MEAL TRACKER (HỆ THỐNG THEO DÕI DINH DƯỠNG & CALO THÔNG MINH)
 
+> 🎨 **Figma UI/UX Design:** [AI Calorie Meal Tracker Figma](https://www.figma.com/design/9EWSQ8wvef3FiUdsTeDv7P/AI-Calorie-Meal-Tracker?node-id=0-1&p=f&t=svMPikBiSviLB8xj-0) | Chi tiết: [figma-design.md](../designs/figma-design.md)
+
 ---
 
 ## 1. Giới thiệu & Tổng quan (Introduction & Overview)
