@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { ActivityLevel, Gender, Goal, HealthProfile } from '../types';
-import { Calculator } from 'lucide-react';
+import { Calculator, Check } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<HealthProfile | null>(null);
@@ -13,6 +13,7 @@ export const ProfilePage: React.FC = () => {
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('MODERATELY_ACTIVE');
   const [goal, setGoal] = useState<Goal>('LOSE_WEIGHT');
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -39,6 +40,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSuccessMessage('');
     try {
       setSaving(true);
       const res = await api.saveProfile({
@@ -57,7 +59,7 @@ export const ProfilePage: React.FC = () => {
 
       if (res.success && res.data) {
         setProfile(res.data);
-        alert('Cập nhật hồ sơ sức khỏe và tính toán BMR / TDEE thành công!');
+        setSuccessMessage('Cập nhật hồ sơ sức khỏe và tính toán BMR / TDEE thành công!');
       }
     } catch (e) {
       alert('Không thể cập nhật hồ sơ');
@@ -75,6 +77,29 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
+      {successMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-brand-tint)',
+            border: '1px solid var(--color-brand-primary)',
+            color: 'var(--color-brand-primary)',
+            fontSize: '14px',
+            fontWeight: 600,
+            marginBottom: 'var(--spacing-6)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <Check size={18} aria-hidden="true" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       <div className="dashboard-layout">
         {/* Form Card */}
         <div className="card">
@@ -82,19 +107,23 @@ export const ProfilePage: React.FC = () => {
           <form onSubmit={handleSave}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">Tuổi</label>
+                <label htmlFor="profile-age" className="form-label">Tuổi</label>
                 <input
+                  id="profile-age"
                   type="number"
                   className="form-input"
                   value={age}
                   onChange={(e) => setAge(parseInt(e.target.value) || 20)}
+                  min={10}
+                  max={120}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Giới tính</label>
+                <label htmlFor="profile-gender" className="form-label">Giới tính</label>
                 <select
+                  id="profile-gender"
                   className="form-select"
                   value={gender}
                   onChange={(e) => setGender(e.target.value as Gender)}
@@ -108,31 +137,38 @@ export const ProfilePage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">Chiều cao (cm)</label>
+                <label htmlFor="profile-height" className="form-label">Chiều cao (cm)</label>
                 <input
+                  id="profile-height"
                   type="number"
                   className="form-input"
                   value={heightCm}
                   onChange={(e) => setHeightCm(parseFloat(e.target.value) || 160)}
+                  min={50}
+                  max={250}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Cân nặng hiện tại (kg)</label>
+                <label htmlFor="profile-weight" className="form-label">Cân nặng hiện tại (kg)</label>
                 <input
+                  id="profile-weight"
                   type="number"
                   className="form-input"
                   value={weightKg}
                   onChange={(e) => setWeightKg(parseFloat(e.target.value) || 60)}
+                  min={20}
+                  max={300}
                   required
                 />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Mức độ vận động</label>
+              <label htmlFor="profile-activity" className="form-label">Mức độ vận động</label>
               <select
+                id="profile-activity"
                 className="form-select"
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
@@ -146,20 +182,27 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Mục tiêu cân nặng</label>
+              <label htmlFor="profile-goal" className="form-label">Mục tiêu thể trạng</label>
               <select
+                id="profile-goal"
                 className="form-select"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value as Goal)}
               >
-                <option value="LOSE_WEIGHT">Giảm cân (Thâm hụt 500 kcal/ngày)</option>
-                <option value="MAINTAIN">Duy trì vóc dáng (Giữ nguyên TDEE)</option>
-                <option value="GAIN_WEIGHT">Tăng cân / Tăng cơ (Thặng dư 500 kcal/ngày)</option>
+                <option value="LOSE_WEIGHT">Giảm mỡ (Thâm hụt calo an toàn -400 kcal/ngày)</option>
+                <option value="MAINTAIN">Duy trì vóc dáng (Giữ nguyên mức tiêu hao TDEE)</option>
+                <option value="GAIN_WEIGHT">Tăng cơ (Thặng dư năng lượng +300 kcal/ngày)</option>
               </select>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }} disabled={saving}>
-              <Calculator size={16} />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ width: '100%', marginTop: '12px' }}
+              disabled={saving}
+              aria-busy={saving}
+            >
+              <Calculator size={16} aria-hidden="true" />
               {saving ? 'Đang tính toán...' : 'Tính toán lại BMR, TDEE & Lưu mục tiêu'}
             </button>
           </form>
@@ -167,30 +210,30 @@ export const ProfilePage: React.FC = () => {
 
         {/* Results Card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="card" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
+          <div className="card" style={{ background: 'var(--color-bg-surface)' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '16px' }}>Kết quả tính toán y khoa</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Chỉ số BMI</span>
-                <span style={{ fontWeight: '800', color: 'var(--primary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--color-border-default)' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Chỉ số BMI</span>
+                <span className="tabular-nums" style={{ fontWeight: '800', color: 'var(--color-brand-primary)' }}>
                   {profile?.bmi || '22.5'} ({profile?.bmiCategory || 'Bình thường'})
                 </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Năng lượng trao đổi chất (BMR)</span>
-                <span style={{ fontWeight: '800' }}>{profile?.bmr || 1550} kcal</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--color-border-default)' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Năng lượng trao đổi chất (BMR)</span>
+                <span className="tabular-nums" style={{ fontWeight: '800' }}>{profile?.bmr || 1550} kcal</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Tổng tiêu hao hàng ngày (TDEE)</span>
-                <span style={{ fontWeight: '800' }}>{profile?.tdee || 2400} kcal</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid var(--color-border-default)' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Tổng tiêu hao hàng ngày (TDEE)</span>
+                <span className="tabular-nums" style={{ fontWeight: '800' }}>{profile?.tdee || 2400} kcal</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ color: 'var(--primary)', fontWeight: '700' }}>Mục tiêu Calories khuyến nghị</span>
-                <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--primary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: 'var(--color-brand-tint)', borderRadius: 'var(--radius-md)' }}>
+                <span style={{ color: 'var(--color-brand-primary)', fontWeight: '700' }}>Mục tiêu Calories khuyến nghị</span>
+                <span className="tabular-nums" style={{ fontSize: '18px', fontWeight: '900', color: 'var(--color-brand-primary)' }}>
                   {profile?.dailyCalorieTarget || 1900} kcal
                 </span>
               </div>
@@ -201,16 +244,16 @@ export const ProfilePage: React.FC = () => {
             <h4 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px' }}>Mục tiêu phân bổ Macronutrients</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--accent-blue)', fontWeight: '600' }}>Protein (Đạm - 30%):</span>
-                <span style={{ fontWeight: '700' }}>{profile?.dailyProteinTargetGrams || 142}g</span>
+                <span style={{ color: 'var(--color-macro-protein)', fontWeight: '600' }}>Protein (Đạm - 30%):</span>
+                <span className="tabular-nums" style={{ fontWeight: '700' }}>{profile?.dailyProteinTargetGrams || 142}g</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--accent-yellow)', fontWeight: '600' }}>Carbohydrates (Đường bột - 45%):</span>
-                <span style={{ fontWeight: '700' }}>{profile?.dailyCarbsTargetGrams || 213}g</span>
+                <span style={{ color: 'var(--color-macro-carbs)', fontWeight: '600' }}>Carbohydrates (Đường bột - 45%):</span>
+                <span className="tabular-nums" style={{ fontWeight: '700' }}>{profile?.dailyCarbsTargetGrams || 213}g</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--accent-pink)', fontWeight: '600' }}>Fat (Chất béo - 25%):</span>
-                <span style={{ fontWeight: '700' }}>{profile?.dailyFatTargetGrams || 53}g</span>
+                <span style={{ color: 'var(--color-macro-fat)', fontWeight: '600' }}>Fat (Chất béo - 25%):</span>
+                <span className="tabular-nums" style={{ fontWeight: '700' }}>{profile?.dailyFatTargetGrams || 53}g</span>
               </div>
             </div>
           </div>

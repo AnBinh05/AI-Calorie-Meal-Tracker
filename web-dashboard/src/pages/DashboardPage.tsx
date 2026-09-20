@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { StatCard } from '../components/StatCard';
 import { DailyCalorieProgressCard } from '../components/DailyCalorieProgressCard';
+import { AiScanDropzone } from '../components/AiScanDropzone';
+import { AiMealReviewModal } from '../components/AiMealReviewModal';
 import { api } from '../services/api';
-import { DailySummary } from '../types';
+import { DailySummary, Meal } from '../types';
 import { Sparkles, Utensils } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<string>('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -92,15 +96,61 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleImageSelected = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImagePreview(reader.result as string);
+      setIsAiModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveMealFromAi = (mealData: any) => {
+    if (!summary) return;
+
+    const newMeal: Meal = {
+      id: Date.now(),
+      mealDate: new Date().toISOString().split('T')[0],
+      name: mealData.name,
+      mealType: 'LUNCH',
+      mealTypeDisplayName: 'Bữa trưa (AI Scan)',
+      totalCalories: mealData.totalCalories,
+      totalProtein: mealData.totalProtein,
+      totalCarbs: mealData.totalCarbs,
+      totalFat: mealData.totalFat,
+      healthTip: 'Món ăn do AI phân tích tự động đã được lưu thành công vào nhật ký.',
+      items: mealData.items.map((item: any) => ({
+        id: parseInt(item.id) || Date.now(),
+        name: item.name,
+        estimatedWeightGrams: item.grams,
+        calories: Math.round((item.grams * item.caloriesPer100g) / 100),
+        protein: Math.round((item.grams * item.proteinPer100g) / 100),
+        carbs: Math.round((item.grams * item.carbsPer100g) / 100),
+        fat: Math.round((item.grams * item.fatPer100g) / 100),
+      })),
+    };
+
+    const updatedCalories = summary.totalCaloriesConsumed + mealData.totalCalories;
+    setSummary({
+      ...summary,
+      totalCaloriesConsumed: updatedCalories,
+      remainingCalories: Math.max(summary.calorieTarget - updatedCalories, 0),
+      totalProteinConsumed: summary.totalProteinConsumed + mealData.totalProtein,
+      totalCarbsConsumed: summary.totalCarbsConsumed + mealData.totalCarbs,
+      totalFatConsumed: summary.totalFatConsumed + mealData.totalFat,
+      mealCount: summary.mealCount + 1,
+      meals: [newMeal, ...summary.meals],
+    });
+  };
+
   const calorieTarget = summary?.calorieTarget || 2000;
   const consumedCalories = summary?.totalCaloriesConsumed || 0;
-  const carbsTarget = summary?.carbsTargetGrams || 225;
+  const carbsTarget = summary?.carbsTargetGrams || 220;
   const consumedCarbs = summary?.totalCarbsConsumed || 0;
-  const proteinTarget = summary?.proteinTargetGrams || 150;
+  const proteinTarget = summary?.proteinTargetGrams || 130;
   const consumedProtein = summary?.totalProteinConsumed || 0;
-  const fatTarget = summary?.fatTargetGrams || 55;
+  const fatTarget = summary?.fatTargetGrams || 60;
   const consumedFat = summary?.totalFatConsumed || 0;
-  const remainingCalories = Math.max(calorieTarget - consumedCalories, 0);
   const caloriePercent = Math.round((consumedCalories / calorieTarget) * 100);
 
   return (
@@ -171,113 +221,130 @@ export const DashboardPage: React.FC = () => {
             />
           </div>
 
-      {/* Main Grid Section */}
-      <div className="dashboard-layout">
-        {/* Left Column: Recent Meals */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Các bữa ăn hôm nay ({summary?.meals?.length || 0})</h3>
-            <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>Đồng bộ từ Mobile</span>
-          </div>
+          {/* Main Grid Section */}
+          <div className="dashboard-layout">
+            {/* Left Column: Recent Meals */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Các bữa ăn hôm nay ({summary?.meals?.length || 0})</h3>
+                <span style={{ fontSize: '13px', color: 'var(--color-brand-primary)', fontWeight: '600' }}>
+                  Đồng bộ từ Mobile & Web
+                </span>
+              </div>
 
-          {summary?.meals && summary.meals.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {summary.meals.map((meal) => (
-                <div
-                  key={meal.id}
-                  style={{
-                    backgroundColor: '#090d16',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '16px',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{
-                      width: '54px',
-                      height: '54px',
-                      borderRadius: '12px',
-                      backgroundColor: 'var(--bg-card)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '24px',
-                      overflow: 'hidden'
-                    }}>
-                      {meal.imageUrl ? (
-                        <img src={meal.imageUrl} alt={meal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        '🍽️'
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className={`badge badge-${meal.mealType.toLowerCase()}`}>
-                          {meal.mealTypeDisplayName || meal.mealType}
-                        </span>
-                        <h4 style={{ fontSize: '15px', fontWeight: '700' }}>{meal.name}</h4>
+              {summary?.meals && summary.meals.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {summary.meals.map((meal) => (
+                    <div
+                      key={meal.id}
+                      style={{
+                        backgroundColor: 'var(--color-bg-surface-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px',
+                        border: '1px solid var(--color-border-default)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{
+                          width: '54px',
+                          height: '54px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'var(--color-bg-surface)',
+                          border: '1px solid var(--color-border-default)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '24px',
+                          overflow: 'hidden'
+                        }}>
+                          {meal.imageUrl ? (
+                            <img src={meal.imageUrl} alt={meal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span role="img" aria-label="Biểu tượng món ăn">🍽️</span>
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className={`badge badge-${meal.mealType.toLowerCase()}`}>
+                              {meal.mealTypeDisplayName || meal.mealType}
+                            </span>
+                            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)' }}>{meal.name}</h4>
+                          </div>
+                          <p className="tabular-nums" style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                            {meal.items?.length || 0} món • P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F: {Math.round(meal.totalFat)}g
+                          </p>
+                        </div>
                       </div>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        {meal.items?.length || 0} món • P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F: {Math.round(meal.totalFat)}g
-                      </p>
-                    </div>
-                  </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--primary)' }}>
-                      {Math.round(meal.totalCalories)} kcal
+                      <div style={{ textAlign: 'right' }}>
+                        <div className="tabular-nums" style={{ fontSize: '18px', fontWeight: '800', color: 'var(--color-brand-primary)' }}>
+                          {Math.round(meal.totalCalories)} kcal
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--color-text-secondary)' }}>
+                  <Utensils size={40} style={{ margin: '0 auto 12px', color: 'var(--color-text-muted)' }} aria-hidden="true" />
+                  <p style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>Chưa có bữa ăn nào được ghi nhận hôm nay</p>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                    Hãy kéo thả ảnh đĩa ăn vào khung bên phải để AI tự động phân tích calo!
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
-              <Utensils size={40} style={{ margin: '0 auto 12px', color: 'var(--text-dim)' }} />
-              <p style={{ fontWeight: '600' }}>Chưa có bữa ăn nào được ghi nhận hôm nay</p>
-              <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginTop: '4px' }}>
-                Hãy mở ứng dụng di động để chụp ảnh món ăn và trải nghiệm phân tích tự động từ AI!
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Right Column: AI Health Advice & Daily Target Balance */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="card" style={{ background: 'linear-gradient(145deg, #0f172a 0%, #064e3b 100%)', borderColor: '#059669' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Sparkles size={20} color="#a7f3d0" />
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#a7f3d0' }}>AI Nutrition Insights</h3>
-            </div>
-            <p style={{ fontSize: '13px', color: '#d1fae5', lineHeight: '20px' }}>
-              {summary?.meals && summary.meals.length > 0 && summary.meals[0].healthTip
-                ? summary.meals[0].healthTip
-                : 'Hôm nay bạn đang kiểm soát dinh dưỡng rất tốt! Hãy tiếp tục duy trì lượng nước uống đầy đủ (2-2.5L) và phân bổ protein đều qua các bữa ăn chính.'}
-            </p>
-          </div>
+            {/* Right Column: AI Quick Scan Dropzone & AI Insights */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* AI Quick Scan Dropzone Widget */}
+              <div className="card" style={{ padding: 'var(--spacing-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--spacing-3)' }}>
+                  <Sparkles size={18} color="var(--color-brand-primary)" aria-hidden="true" />
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+                    Quét món ăn bằng AI
+                  </h3>
+                </div>
+                <AiScanDropzone
+                  onImageSelected={handleImageSelected}
+                />
+              </div>
 
-          <div className="card">
-            <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '16px' }}>Cân đối năng lượng</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border-color)', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Năng lượng mục tiêu</span>
-              <span style={{ fontWeight: '700' }}>{calorieTarget} kcal</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border-color)', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Đã tiêu thụ</span>
-              <span style={{ fontWeight: '700', color: 'var(--primary)' }}>{Math.round(consumedCalories)} kcal</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Còn lại hôm nay</span>
-              <span style={{ fontWeight: '800', color: '#38bdf8' }}>{Math.round(remainingCalories)} kcal</span>
+              {/* AI Health Advice Callout */}
+              <div
+                className="card"
+                style={{
+                  background: 'linear-gradient(145deg, var(--color-bg-surface) 0%, var(--color-brand-tint) 100%)',
+                  borderColor: 'var(--color-brand-primary)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <Sparkles size={20} color="var(--color-brand-primary)" aria-hidden="true" />
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--color-brand-primary)' }}>
+                    AI Nutrition Insights
+                  </h3>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: '20px' }} className="text-pretty">
+                  {summary?.meals && summary.meals.length > 0 && summary.meals[0].healthTip
+                    ? summary.meals[0].healthTip
+                    : 'Hôm nay bạn đang kiểm soát dinh dưỡng rất tốt! Hãy tiếp tục duy trì lượng nước uống đầy đủ (2-2.5L) và phân bổ protein đều qua các bữa ăn chính.'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      </>
+        </>
       )}
+
+      {/* Accessible AI Meal Review Modal */}
+      <AiMealReviewModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        imagePreviewUrl={selectedImagePreview}
+        onSaveMeal={handleSaveMealFromAi}
+      />
     </div>
   );
 };

@@ -40,7 +40,7 @@ export const DailyCalorieDonut: React.FC<DailyCalorieDonutProps> = ({
 
   return (
     <div
-      className={`daily-calorie-donut-wrapper ${className}`}
+      className={`daily-calorie-donut-wrapper donut-container-entrance ${className}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -98,6 +98,7 @@ export const DailyCalorieDonut: React.FC<DailyCalorieDonutProps> = ({
 
           {/* Animated Foreground Progress Arc */}
           <circle
+            className="donut-progress-arc"
             cx={center}
             cy={center}
             r={radius}
@@ -107,9 +108,6 @@ export const DailyCalorieDonut: React.FC<DailyCalorieDonutProps> = ({
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            style={{
-              transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.3s ease-out',
-            }}
           />
         </svg>
 

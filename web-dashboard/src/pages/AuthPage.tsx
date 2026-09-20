@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { AlertCircle, Sparkles } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,94 +32,128 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'var(--bg-main)',
-      padding: '24px'
+      backgroundColor: 'var(--color-bg-app)',
+      padding: 'var(--spacing-6)'
     }}>
-      <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '36px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+      <div className="card" style={{ maxWidth: '440px', width: '100%', padding: 'var(--spacing-8)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
           <div style={{
             width: '52px',
             height: '52px',
-            borderRadius: '16px',
+            borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '26px',
-            marginBottom: '12px'
+            marginBottom: 'var(--spacing-3)'
           }}>
             🥗
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: '900' }}>AI Calorie Tracker</h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {isLogin ? 'Đăng nhập vào Web Dashboard quản lý' : 'Đăng ký tài khoản theo dõi dinh dưỡng mới'}
+          <h1 style={{ fontSize: 'var(--text-heading-1)', fontWeight: 'var(--font-weight-heading-1)', color: 'var(--color-text-primary)' }}>
+            NutriAI Tracker
+          </h1>
+          <p style={{ fontSize: 'var(--text-body-regular)', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+            {isLogin ? 'Đăng nhập vào Web Dashboard quản lý dinh dưỡng' : 'Đăng ký tài khoản theo dõi bữa ăn mới'}
           </p>
         </div>
 
         {error && (
-          <div style={{
-            padding: '12px',
-            borderRadius: 'var(--radius-sm)',
-            backgroundColor: 'rgba(244, 63, 94, 0.15)',
-            border: '1px solid rgba(244, 63, 94, 0.3)',
-            color: 'var(--accent-pink)',
-            fontSize: '13px',
-            marginBottom: '18px'
-          }}>
-            {error}
+          <div
+            id="auth-form-error"
+            role="alert"
+            aria-live="polite"
+            style={{
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: 'var(--color-status-danger)',
+              fontSize: '13px',
+              fontWeight: 500,
+              marginBottom: 'var(--spacing-4)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <AlertCircle size={18} aria-hidden="true" style={{ flexShrink: 0 }} />
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate={false}>
           {!isLogin && (
             <div className="form-group">
-              <label className="form-label">Họ và tên</label>
+              <label htmlFor="register-fullname" className="form-label">
+                Họ và tên
+              </label>
               <input
+                id="register-fullname"
                 type="text"
                 className="form-input"
                 placeholder="Nguyễn Văn A"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
                 required
               />
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label htmlFor="auth-email" className="form-label">
+              Email đăng nhập
+            </label>
             <input
+              id="auth-email"
               type="email"
               className="form-input"
               placeholder="nhap.email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              aria-describedby={error ? 'auth-form-error' : undefined}
+              aria-invalid={!!error}
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mật khẩu</label>
+            <label htmlFor="auth-password" className="form-label">
+              Mật khẩu
+            </label>
             <input
+              id="auth-password"
               type="password"
               className="form-input"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              aria-describedby={error ? 'auth-form-error' : undefined}
+              aria-invalid={!!error}
               required
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '46px', marginTop: '10px' }} disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', height: '46px', marginTop: '10px' }}
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? 'Đang xử lý...' : isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
           </button>
         </form>
 
         {/* Instant Demo Login Button */}
-        <div style={{ marginTop: '16px' }}>
+        <div style={{ marginTop: 'var(--spacing-4)' }}>
           <button
             type="button"
             onClick={async () => {
@@ -134,12 +169,14 @@ export const AuthPage: React.FC = () => {
               color: 'var(--color-brand-primary)',
               borderColor: 'var(--color-brand-primary)',
             }}
+            aria-label="Đăng nhập nhanh với tài khoản Demo trải nghiệm tính năng"
           >
-            ⚡ Dùng thử ngay (Tài khoản Demo)
+            <Sparkles size={16} aria-hidden="true" />
+            <span>⚡ Dùng thử ngay (Tài khoản Demo)</span>
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+        <div style={{ textAlign: 'center', marginTop: 'var(--spacing-6)', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
           {isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
           <button
             type="button"
