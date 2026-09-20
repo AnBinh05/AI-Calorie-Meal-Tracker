@@ -117,7 +117,29 @@ export const AuthPage: React.FC = () => {
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--text-muted)' }}>
+        {/* Instant Demo Login Button */}
+        <div style={{ marginTop: '16px' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              await login('demo@nutriai.vn', 'demo123');
+            }}
+            className="btn btn-outline"
+            style={{
+              width: '100%',
+              height: '42px',
+              fontSize: '13px',
+              fontWeight: 600,
+              backgroundColor: 'var(--color-brand-tint)',
+              color: 'var(--color-brand-primary)',
+              borderColor: 'var(--color-brand-primary)',
+            }}
+          >
+            ⚡ Dùng thử ngay (Tài khoản Demo)
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
           {isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
           <button
             type="button"
@@ -125,7 +147,7 @@ export const AuthPage: React.FC = () => {
               setIsLogin(!isLogin);
               setError('');
             }}
-            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: '700', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: 'var(--color-brand-primary)', fontWeight: '700', cursor: 'pointer' }}
           >
             {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
           </button>
