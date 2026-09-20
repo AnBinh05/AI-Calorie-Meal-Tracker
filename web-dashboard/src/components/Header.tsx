@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar, RefreshCw, Sparkles } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   onRefresh?: () => void;
@@ -16,30 +17,33 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh, loading = false }) =>
 
   return (
     <header style={{
-      height: '70px',
-      borderBottom: '1px solid var(--border-color)',
-      padding: '0 32px',
+      height: 'var(--header-height-desktop)',
+      borderBottom: '1px solid var(--color-border-default)',
+      padding: '0 var(--spacing-8)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: 'rgba(11, 17, 32, 0.6)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'var(--color-bg-surface)',
       position: 'sticky',
       top: 0,
-      zIndex: 10
+      zIndex: 'var(--z-sticky)' as any,
+      transition: 'background-color 0.2s ease-out, border-color 0.2s ease-out'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
-        <Calendar size={16} color="var(--primary)" />
-        <span style={{ textTransform: 'capitalize' }}>{todayFormatted}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--text-body-regular)' }}>
+        <Calendar size={18} color="var(--color-brand-primary)" />
+        <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{todayFormatted}</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+        <ThemeToggle />
+
         {onRefresh && (
           <button
             onClick={onRefresh}
             className="btn btn-outline"
             style={{ padding: '8px 14px', fontSize: '13px' }}
             disabled={loading}
+            type="button"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Làm mới dữ liệu
@@ -48,17 +52,17 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh, loading = false }) =>
 
         <div style={{
           padding: '6px 12px',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          backgroundColor: 'var(--color-brand-tint)',
           borderRadius: 'var(--radius-full)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
+          border: '1px solid var(--color-brand-primary)',
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
           fontSize: '12px',
-          color: 'var(--primary)',
+          color: 'var(--color-brand-primary)',
           fontWeight: '600'
         }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
+          <Sparkles size={14} color="var(--color-brand-primary)" />
           Gemini Vision Ready
         </div>
       </div>

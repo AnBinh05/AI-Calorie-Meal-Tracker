@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#10B981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="128" fill="url(#brandGrad)" />
+
+  <!-- Inner Subtle Border -->
+  <rect x="16" y="16" width="480" height="480" rx="112" stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.2" fill="none" />
+
+  <!-- Bowl / Nutrition Container -->
+  <path d="M128 260C128 335.1 185.3 396 256 396C326.7 396 384 335.1 384 260H128Z" fill="#FFFFFF" filter="url(#glow)"/>
+
+  <!-- Steaming / Fresh Healthy Leaf -->
+  <path d="M256 130C256 130 330 150 330 220C330 260 290 260 256 260C222 260 182 260 182 220C182 150 256 130 256 130Z" fill="url(#accentGrad)"/>
+  <path d="M256 160V260" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-opacity="0.8"/>
+
+  <!-- AI Magic Sparkles -->
+  <!-- Main 4-point star -->
+  <path d="M370 140C370 162 388 180 410 180C388 180 370 198 370 220C370 198 352 180 330 180C352 180 370 162 370 140Z" fill="#FBBF24"/>
+
+  <!-- Small star -->
+  <path d="M140 180C140 193 151 204 164 204C151 204 140 215 140 228C140 215 129 204 116 204C129 204 140 193 140 180Z" fill="#FCD34D"/>
+</svg>

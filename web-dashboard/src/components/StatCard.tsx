@@ -14,41 +14,51 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   progress,
-  color = 'var(--primary)',
+  color = 'var(--color-brand-primary)',
   icon,
 }) => {
   return (
     <div className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>{title}</span>
-        {icon && <span style={{ fontSize: '20px' }}>{icon}</span>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-3)' }}>
+        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-text-secondary)' }}>{title}</span>
+        {icon && <span style={{ fontSize: '20px' }} aria-hidden="true">{icon}</span>}
       </div>
 
-      <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '4px' }}>
+      <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
         {value}
       </div>
 
       {subtitle && (
-        <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: progress !== undefined ? '14px' : '0' }}>
+        <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: progress !== undefined ? '14px' : '0' }}>
           {subtitle}
         </div>
       )}
 
       {progress !== undefined && (
-        <div style={{
-          height: '6px',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          borderRadius: '3px',
-          overflow: 'hidden',
-          marginTop: '10px'
-        }}>
-          <div style={{
-            height: '100%',
-            width: `${Math.min(Math.max(progress, 0), 100)}%`,
-            backgroundColor: color,
-            borderRadius: '3px',
-            transition: 'width 0.4s ease'
-          }} />
+        <div
+          role="progressbar"
+          aria-valuenow={Math.round(Math.min(Math.max(progress, 0), 100))}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${title} progress`}
+          style={{
+            height: '6px',
+            backgroundColor: 'var(--color-bg-surface-subtle)',
+            border: '1px solid var(--color-border-default)',
+            borderRadius: 'var(--radius-full)',
+            overflow: 'hidden',
+            marginTop: '10px'
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.min(Math.max(progress, 0), 100)}%`,
+              backgroundColor: color,
+              borderRadius: 'var(--radius-full)',
+              transition: 'width 200ms ease'
+            }}
+          />
         </div>
       )}
     </div>
