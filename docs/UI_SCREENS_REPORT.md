@@ -59,32 +59,8 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/pages/AuthPage.tsx`
 - **Mục đích**: Cho phép người dùng xác thực danh tính, đăng nhập vào hệ thống hoặc tạo tài khoản mới.
 
-```
-+-------------------------------------------------------------+
-|                         [🥗 Logo]                           |
-|                      NutriAI Tracker                        |
-|        Đăng nhập vào Web Dashboard quản lý dinh dưỡng       |
-|                                                             |
-|  +-------------------------------------------------------+  |
-|  | [!] Thông báo lỗi nếu sai mật khẩu/email (aria-live)  |  |
-|  +-------------------------------------------------------+  |
-|                                                             |
-|  [Họ và tên (Chỉ hiện khi Đăng ký)]                          |
-|  [                                                     ]    |
-|                                                             |
-|  Địa chỉ Email                                              |
-|  [ user@example.com                                    ]    |
-|                                                             |
-|  Mật khẩu                                                   |
-|  [ •••••••••••••                                       ]    |
-|                                                             |
-|  +-------------------------------------------------------+  |
-|  | [✨ Đăng nhập vào Dashboard / Đăng ký tài khoản]      |  |
-|  +-------------------------------------------------------+  |
-|                                                             |
-|       Chưa có tài khoản? [Đăng ký tài khoản mới]             |
-+-------------------------------------------------------------+
-```
+### Ảnh chụp thực tế:
+![Màn hình Đăng nhập](./screenshots/01_auth_login.png)
 
 ### Chi tiết Thành phần Giao diện
 1. **Header Khối Auth**:
@@ -108,44 +84,13 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/pages/DashboardPage.tsx`
 - **Mục đích**: Trung tâm điều khiển chính hiển thị tiến trình nạp Calo trong ngày, cân đối 3 chỉ số Macros, 4 cụm bữa ăn, khu vực kéo thả quét ảnh AI và biểu đồ mini xu hướng 7 ngày.
 
-```
-+-------------------------------------------------------------------------------------------------------+
-| Header: Tổng quan dinh dưỡng | [📅 Hôm nay: Chủ Nhật, 20/09/2026]                                    |
-+-------------------------------------------------------------------------------------------------------+
-| [DailyCalorieProgressCard]                                                                            |
-|  +------------------------------+   +---------------------------------------------------------------+ |
-|  | [SVG Donut Chart]            |   | 3 Thanh ProgressBar:                                          | |
-|  |   1,450 / 2,000 kcal         |   | - Carbs:   140g / 220g (64%) [████████████░░░░░░░] (Cam)     | |
-|  |   (Còn lại 550 kcal)         |   | - Protein:  95g / 130g (73%) [██████████████░░░░░] (Xanh)    | |
-|  |   [72.5% Mục tiêu]           |   | - Fat:      42g / 60g  (70%) [█████████████░░░░░░] (Hồng)    | |
-|  +------------------------------+   +---------------------------------------------------------------+ |
-+-------------------------------------------------------------------------------------------------------+
-| 4 StatCards Grid:                                                                                     |
-| [🔥 Calories: 1,450 kcal]  [🥩 Protein: 95g]      [🍚 Carbs: 140g]       [🥑 Fat: 42g]                |
-| Target: 2,000 kcal (73%)   Target: 130g (73%)     Target: 220g (64%)     Target: 60g (70%)            |
-| [█████████████░░░░░░]      [█████████████░░░]     [████████████░░░░]     [█████████████░░░]           |
-+-------------------------------------------------------------------------------------------------------+
-| CỘT TRÁI: NHẬT KÝ 4 BỮA ĂN (70%)                     | CỘT PHẢI: AI QUICK SCAN & TRENDS (30%)         |
-|                                                      |                                                |
-| 1. [🌅 Bữa sáng] - 420 kcal | P:25g C:60g F:8g       | 1. [Quét món ăn bằng AI]                       |
-|    - Phở bò tái (450g) • Trà đào (300ml)             |    +-----------------------------------------+ |
-|    [+ Thêm món vào Bữa sáng]                         |    | [📸 Kéo thả ảnh hoặc Bấm để tải lên]     | |
-|                                                      |    | [* Tối đa 10MB - JPG/PNG/WEBP]           | |
-| 2. [☀️ Bữa trưa] - 650 kcal | P:45g C:65g F:24g      |    +-----------------------------------------+ |
-|    - Cơm tấm sườn (350g) • Canh cải (200g)           |                                                |
-|    [+ Thêm món vào Bữa trưa]                         | 2. [Biểu đồ Cột Xu hướng Calo 7 Ngày]         |
-|                                                      |    - - - - - - - - - - - - - [Target 2,000k]   |
-| 3. [🌙 Bữa tối] - 380 kcal | P:25g C:15g F:10g       |    [T2] [T3] [T4] [T5] [T6] [T7] [CN]          |
-|    - Salad ức gà (250g) • Sốt mè rang (15ml)         |     █    █    █    █    █    █    █ (Hôm nay)  |
-|    [+ Thêm món vào Bữa tối]                          |    [5/7 ngày đạt] | Hover Tooltip: 1,450 kcal  |
-|                                                      |                                                |
-| 4. [🍎 Bữa phụ / Ăn vặt] (Chưa có món - Empty State) | 3. [AI Nutrition Insights]                     |
-|    + - - - - - - - - - - - - - - - - - - - - - - +   |    "Hôm nay bạn đang kiểm soát dinh dưỡng tốt! |
-|    |  [🍽️] Chưa có món ăn nào cho bữa phụ        |   |     Duy trì uống 2-2.5L nước mỗi ngày..."     |
-|    |  [+ Thêm món nhanh]                         |   |                                                |
-|    + - - - - - - - - - - - - - - - - - - - - - - +   +------------------------------------------------+
-+-------------------------------------------------------------------------------------------------------+
-```
+### Ảnh chụp thực tế (Light Mode & Dark Mode):
+
+#### Chế độ Sáng (Light Mode):
+![Tổng quan Dashboard - Light Mode](./screenshots/02_dashboard_light.png)
+
+#### Chế độ Tối (Dark Mode):
+![Tổng quan Dashboard - Dark Mode](./screenshots/03_dashboard_dark.png)
 
 ### Chi tiết Thành phần
 1. **DailyCalorieProgressCard**:
@@ -170,39 +115,6 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/components/AiMealReviewModal.tsx`
 - **Mục đích**: Cửa sổ tương tác mở lên sau khi người dùng tải ảnh đĩa ăn lên, hiển thị kết quả phân tích bóc tách của Gemini AI, cho phép sửa số gram, thêm gia vị và xác nhận lưu.
 
-```
-+=======================================================================================================+
-| ✨ AI Bóc tách & Phân tích Đĩa ăn                                                              [X] Đóng|
-+=======================================================================================================+
-| CỘT TRÁI (42%): ẢNH ĐĨA ĂN & PIN LABELS              | CỘT PHẢI (58%): DANH SÁCH MÓN ĂN BÓC TÁCH      |
-|                                                      |                                                |
-| +--------------------------------------------------+ | Tên bữa ăn: [Cơm tấm sườn nướng trứng ốp la  ] |
-| |                                                  | |                                                |
-| |  [Ảnh chụp đĩa ăn thực tế]                       | | DANH SÁCH MÓN ĂN CHI TIẾT:                     |
-| |                                                  | | 1. [Sườn nướng cốt lết]             [Xóa]      |
-| |   (1) [Sườn nướng - 200g]                        | |    Khối lượng: [-] [ 200 ] [+] g               |
-| |                                                  | |    [🍚 C: 0g] [🥩 P: 42g] [🥑 F: 22g] (370 kcal) |
-| |   (2) [Cơm tấm - 250g]                           | |                                                |
-| |                                                  | | 2. [Cơm tấm trắng]                  [Xóa]      |
-| |   (3) [Trứng ốp la - 50g]                        | |    Khối lượng: [-] [ 250 ] [+] g               |
-| |                                                  | |    [🍚 C: 70g] [🥩 P: 6g]  [🥑 F: 1g]  (325 kcal) |
-| |                                                  | |                                                |
-| +--------------------------------------------------+ | 3. [Trứng ốp la lòng đào]           [Xóa]      |
-|                                                      |    Khối lượng: [-] [  50 ] [+] g               |
-| Tỷ lệ tin cậy AI: [94.5% Độ chính xác cao]           |    [🍚 C: 1g]  [🥩 P: 6g]  [🥑 F: 7g]  (90 kcal)  |
-|                                                      |                                                |
-|                                                      | [+ Thêm món khác thủ công]                     |
-|                                                      |                                                |
-|                                                      | [x] Bổ sung calo dầu mỡ/gia vị xào nấu (+10%)  |
-|                                                      |                                                |
-|                                                      | ---------------------------------------------- |
-|                                                      | TỔNG NĂNG LƯỢNG BỮA ĂN:   864 kcal             |
-|                                                      | [Carbs: 78g] [Protein: 59g] [Fat: 33g]         |
-+=======================================================================================================+
-| [Hủy bỏ / Chụp lại]                                                  [💾 Lưu vào Nhật ký bữa ăn]     |
-+=======================================================================================================+
-```
-
 ### Chi tiết Trợ năng & Tính năng
 - **Bảo toàn Focus (Focus Trap)**: Tự động khóa tiêu điểm bàn phím bên trong modal, phím `Tab` duyệt tuần tự qua các input và nút bấm, phím `Esc` đóng modal an toàn.
 - **Tính toán Real-time**: Thay đổi số gram lập tức tính lại calo và 3 chỉ số Macro của món đó và tổng bữa ăn mà không cần reload trang.
@@ -216,26 +128,13 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/pages/MealHistoryPage.tsx`
 - **Mục đích**: Lưu trữ và truy xuất toàn bộ lịch sử các bữa ăn theo từng ngày cụ thể, lọc theo lịch và hỗ trợ xóa bữa ăn.
 
-```
-+-------------------------------------------------------------------------------------------------------+
-| Header: Lịch sử & Nhật ký bữa ăn                     | Bộ chọn ngày: [ 📅 2026-09-20 ]                |
-+-------------------------------------------------------------------------------------------------------+
-| GRID DANH SÁCH BỮA ĂN TRONG NGÀY (380px Multi-column Grid):                                           |
-|                                                                                                       |
-| +----------------------------------------+   +----------------------------------------+               |
-| | [Bữa sáng] Phở bò tái & Trà đào   [🗑️] |   | [Bữa trưa] Cơm sườn nướng & Canh  [🗑️] |               |
-| | +------------------------------------+ |   | +------------------------------------+ |               |
-| | | [Ảnh chụp bát phở bò]              | |   | | [Ảnh đĩa cơm tấm sườn]             | |               |
-| | +------------------------------------+ |   | +------------------------------------+ |               |
-| | 4 Ô MACRO NHANH:                       |   | 4 Ô MACRO NHANH:                       |               |
-| | [Calo: 420] [Pro: 25g] [Carb:60g][F:8g]|   | [Calo: 650] [Pro: 45g] [Carb:65g][F:24]|               |
-| |                                        |   |                                        |               |
-| | Các món chi tiết:                      |   | Các món chi tiết:                      |               |
-| | • Phở bò tái (450g): 370 kcal          |   | • Cơm tấm sườn (350g): 590 kcal        |               |
-| | • Trà đào ít đường (300ml): 50 kcal    |   | • Canh cải ngọt thịt băm: 60 kcal      |               |
-| +----------------------------------------+   +----------------------------------------+               |
-+-------------------------------------------------------------------------------------------------------+
-```
+### Ảnh chụp thực tế:
+
+#### Chế độ Sáng (Light Mode):
+![Lịch sử Bữa ăn - Chế độ Sáng](./screenshots/04_meal_history_light.png)
+
+#### Chế độ Tối (Dark Mode):
+![Lịch sử Bữa ăn - Chế độ Tối](./screenshots/05_meal_history_dark.png)
 
 ---
 
@@ -245,24 +144,13 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/pages/AnalyticsPage.tsx`
 - **Mục đích**: Cung cấp bức tranh toàn cảnh về độ đều đặn của chế độ ăn, lượng calo trung bình và phân bổ macros theo chu kỳ 7 ngày hoặc 30 ngày.
 
-```
-+-------------------------------------------------------------------------------------------------------+
-| Header: Phân tích & Xu hướng                         | Bộ lọc: [ [7 ngày gần nhất] ] [ 30 ngày qua ]  |
-+-------------------------------------------------------------------------------------------------------+
-| 4 STAT CARDS TRUNG BÌNH CHU KỲ:                                                                       |
-| [📊 Calo trung bình/ngày: 1,920 kcal]   [🥩 Protein TB: 118g]   [🍚 Carbs TB: 210g]  [🥑 Fat TB: 52g] |
-+-------------------------------------------------------------------------------------------------------+
-| DANH SÁCH TIẾN ĐỘ CALORIES TỪNG NGÀY TRONG CHU KỲ:                                                    |
-|                                                                                                       |
-| 2026-09-14: [████████████████████░░░░░░░░]  1,950 / 2,000 kcal (97.5% - Đạt)                          |
-| 2026-09-15: [█████████████████████░░░░░░░]  2,040 / 2,000 kcal (102.0% - Đạt)                         |
-| 2026-09-16: [██████████████████░░░░░░░░░░]  1,820 / 2,000 kcal (91.0% - Đạt)                          |
-| 2026-09-17: [██████████████████████░░░░░░]  2,180 / 2,000 kcal (109.0% - Lệch nhẹ)                    |
-| 2026-09-18: [███████████████████░░░░░░░░░]  1,910 / 2,000 kcal (95.5% - Đạt)                          |
-| 2026-09-19: [████████████████████████░░░░]  2,350 / 2,000 kcal (117.5% - Vượt ngưỡng)                 |
-| 2026-09-20: [██████████████░░░░░░░░░░░░░░]  1,450 / 2,000 kcal (72.5% - Đang ghi nhận)               |
-+-------------------------------------------------------------------------------------------------------+
-```
+### Ảnh chụp thực tế:
+
+#### Chế độ Sáng (Light Mode):
+![Phân tích & Xu hướng - Chế độ Sáng](./screenshots/06_analytics_light.png)
+
+#### Chế độ Tối (Dark Mode):
+![Phân tích & Xu hướng - Chế độ Tối](./screenshots/07_analytics_dark.png)
 
 ---
 
@@ -272,25 +160,13 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/pages/ProfilePage.tsx`
 - **Mục đích**: Nhập thông số thể trạng người dùng, áp dụng công thức y khoa Mifflin-St Jeor tự động tính BMR (Tỷ lệ trao đổi chất cơ bản), TDEE (Tổng năng lượng tiêu hao) và đề xuất mức Calo / Macros mục tiêu.
 
-```
-+-------------------------------------------------------------------------------------------------------+
-| Header: Hồ sơ sức khỏe & BMR / TDEE                                                                   |
-+-------------------------------------------------------------------------------------------------------+
-| CỘT TRÁI: FORM NHẬP THỂ TRẠNG (50%)                  | CỘT PHẢI: KẾT QUẢ TÍNH BMR & TDEE (50%)        |
-|                                                      |                                                |
-| [Tuổi: 25        ]   [Giới tính: Nam / Nữ]           | +--------------------------------------------+ |
-| [Chiều cao: 170cm]   [Cân nặng: 65 kg    ]           | | CHỈ SỐ KHỐI CƠ THỂ: BMI: 22.5 (Bình thường)| |
-| [Cân nặng mục tiêu: 62 kg                ]           | | - BMR (Chuyển hóa cơ bản): 1,620 kcal/ngày | |
-|                                                      | | - TDEE (Tổng tiêu hao):     2,450 kcal/ngày| |
-| Mức độ vận động:                                     | +--------------------------------------------+ |
-| (o) Vận động vừa phải (Tập luyện 3-5 buổi/tuần)      |                                                |
-|                                                      | MỤC TIÊU KHUYẾN NGHỊ TỰ ĐỘNG (Giảm mỡ):        |
-| Mục tiêu thể hình:                                   | - Calo khuyến nghị: 2,000 kcal/ngày (-450 kcal)|
-| [x] Giảm mỡ (Thâm hụt calo an toàn)                  | - Protein: 150g (30% tổng năng lượng)          |
-|                                                      | - Carbs:   225g (45% tổng năng lượng)          |
-| [+ Lưu thông số & Tính lại]                          | - Fat:      55g (25% tổng năng lượng)          |
-+-------------------------------------------------------------------------------------------------------+
-```
+### Ảnh chụp thực tế:
+
+#### Chế độ Sáng (Light Mode):
+![Hồ sơ Sức khỏe - Chế độ Sáng](./screenshots/08_health_profile_light.png)
+
+#### Chế độ Tối (Dark Mode):
+![Hồ sơ Sức khỏe - Chế độ Tối](./screenshots/09_health_profile_dark.png)
 
 ---
 
@@ -299,28 +175,8 @@ Hệ thống giao diện NutriAI Web Dashboard được xây dựng theo chuẩn
 - **File mã nguồn**: `web-dashboard/src/components/ExportModal.tsx`
 - **Mục đích**: Cho phép người dùng hoặc Huấn luyện viên (PT/Bác sĩ dinh dưỡng) trích xuất dữ liệu dinh dưỡng ra tệp PDF hoặc CSV (Excel).
 
-```
-+=======================================================================================================+
-| 📥 Xuất Báo Cáo Dinh Dưỡng & Nhật Ký Ăn Uống                                                   [X] Đóng|
-+=======================================================================================================+
-| 1. CHỌN ĐỊNH DẠNG XUẤT:                                                                               |
-|  (o) [📄 Báo cáo PDF Chi tiết]           ( ) [📊 Dữ liệu CSV / Excel]                                 |
-|      Bao gồm biểu đồ phân bổ, thống kê       Bảng số liệu thô thích hợp nhập                          |
-|      calo, khuyến nghị AI cho Bác sĩ         vào Google Sheets, Excel tính toán                       |
-|                                                                                                       |
-| 2. KHOẢNG THỜI GIAN TRÍCH XUẤT:                                                                       |
-|  [ [7 ngày qua] ]   [ 30 ngày qua ]   [ Tháng này ]   [ Tùy chỉnh ]                                   |
-|                                                                                                       |
-| 3. TÓM TẮT DỮ LIỆU SẼ XUẤT:                                                                          |
-|  - Tổng số ngày: 7 ngày                                                                               |
-|  - Tổng số bữa ăn ghi nhận: 21 bữa                                                                    |
-|  - Định dạng xuất: Adobe PDF Document (.pdf)                                                          |
-|                                                                                                       |
-| +---------------------------------------------------------------------------------------------------+ |
-| | [📥 Tải tệp Báo cáo PDF về máy]                                                                   | |
-| +---------------------------------------------------------------------------------------------------+ |
-+=======================================================================================================+
-```
+### Ảnh chụp thực tế:
+![Modal Xuất Báo Cáo Dinh Dưỡng](./screenshots/10_export_modal.png)
 
 ---
 
