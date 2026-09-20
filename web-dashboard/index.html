@@ -2,13 +2,77 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Calorie & Meal Tracker - Web Dashboard</title>
-    <meta name="description" content="Hệ thống theo dõi dinh dưỡng đa nền tảng với Gemini Flash Vision AI" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Primary SEO Meta Tags -->
+    <title>NutriAI - Nền tảng Theo dõi Dinh dưỡng &amp; Calo Thông minh bằng AI</title>
+    <meta name="title" content="NutriAI - Nền tảng Theo dõi Dinh dưỡng &amp; Calo Thông minh bằng AI" />
+    <meta name="description" content="Theo dõi lượng calo, phân tích macro tự động từ ảnh đĩa ăn với AI Gemini Flash Vision. Quản lý mục tiêu sức khỏe, BMR, TDEE và thực đơn cá nhân hóa." />
+    <meta name="keywords" content="calo, tính calo, theo dõi dinh dưỡng, đếm calo bằng ai, gemini vision, giảm cân, tăng cơ, macro tracker, nutriai" />
+    <meta name="author" content="NutriAI Team" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://nutriai.app/" />
+
+    <!-- Icons & Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#10B981" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nutriai.app/" />
+    <meta property="og:title" content="NutriAI - Nền tảng Theo dõi Dinh dưỡng &amp; Calo Thông minh bằng AI" />
+    <meta property="og:description" content="Theo dõi lượng calo, phân tích macro tự động từ ảnh đĩa ăn với AI Gemini Flash Vision. Quản lý mục tiêu sức khỏe, BMR, TDEE và thực đơn cá nhân hóa." />
+    <meta property="og:image" content="https://nutriai.app/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="NutriAI Dashboard - AI Calorie &amp; Meal Tracker" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:site_name" content="NutriAI" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://nutriai.app/" />
+    <meta name="twitter:title" content="NutriAI - Nền tảng Theo dõi Dinh dưỡng &amp; Calo Thông minh bằng AI" />
+    <meta name="twitter:description" content="Theo dõi lượng calo, phân tích macro tự động từ ảnh đĩa ăn với AI Gemini Flash Vision. Quản lý mục tiêu sức khỏe, BMR, TDEE và thực đơn cá nhân hóa." />
+    <meta name="twitter:image" content="https://nutriai.app/og-image.svg" />
+    <meta name="twitter:image:alt" content="NutriAI Dashboard - AI Calorie &amp; Meal Tracker" />
+
+    <!-- Google Fonts Typography (Inter & Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Structured Data: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "NutriAI",
+      "alternateName": "AI Calorie & Meal Tracker Web Dashboard",
+      "url": "https://nutriai.app",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "VND"
+      },
+      "description": "Nền tảng theo dõi dinh dưỡng và phân tích khẩu phần ăn thông minh với AI Gemini Flash Vision.",
+      "featureList": [
+        "Nhận diện món ăn tự động từ ảnh chụp",
+        "Ước tính khối lượng gram và thành phần macro (Carbs, Protein, Fat)",
+        "Tính toán BMR, TDEE và mục tiêu calo cá nhân",
+        "Báo cáo và biểu đồ xu hướng dinh dưỡng trực quan",
+        "Xuất báo cáo dinh dưỡng PDF và CSV"
+      ],
+      "inLanguage": "vi"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

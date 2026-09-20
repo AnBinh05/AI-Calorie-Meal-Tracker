@@ -1,0 +1,17 @@
+{
+  "name": "NutriAI - AI Calorie & Meal Tracker",
+  "short_name": "NutriAI",
+  "description": "Nền tảng theo dõi dinh dưỡng và phân tích khẩu phần ăn thông minh với AI Gemini Flash Vision.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#10B981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
