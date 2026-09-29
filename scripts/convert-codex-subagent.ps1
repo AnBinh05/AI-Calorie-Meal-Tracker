@@ -81,18 +81,19 @@ if (-not (Test-Path $TargetDir)) {
 
 $skillFilePath = Join-Path $TargetDir "SKILL.md"
 
-$skillContent = @"
----
-name: $name
-description: >-
-  $description
----
-
-# $( (Get-Culture).TextInfo.ToTitleCase($name.Replace('-', ' ')) )
-
-$instructions
-"@
+$title = (Get-Culture).TextInfo.ToTitleCase($name.Replace('-', ' '))
+$skillContent = @(
+    "---",
+    "name: $name",
+    "description: >-",
+    "  $description",
+    "---",
+    "",
+    "# $title",
+    "",
+    $instructions
+) -join [System.Environment]::NewLine
 
 Set-Content -Path $skillFilePath -Value $skillContent -Encoding UTF8
-Write-Host "[✓] Successfully converted Codex subagent to Antigravity Skill:" -ForegroundColor Green
+Write-Host "[OK] Successfully converted Codex subagent to Antigravity Skill:" -ForegroundColor Green
 Write-Host "    $skillFilePath" -ForegroundColor Yellow

@@ -134,6 +134,7 @@ This repository contains specialized skill guides in [`.agents/skills/`](file://
 | **`api-designer`** | `/api-designer` | RESTful API contract modeling, DTO schemas, and OpenAPI/Swagger specs. |
 | **`code-reviewer`** | `/code-reviewer` | PR-style fullstack code reviews, anti-AI slop audit, and regression prevention. |
 | **`security-auditor`** | `/security-auditor` | Security audit, JWT verification, Spring Security 6 filters, IDOR and OWASP. |
+| **`ui-fixer`** | `/ui-fixer` | Precision UI fixes and small-scale bug patches without collateral refactoring. |
 | **`agy-customizations`** | `/agy-customizations` | Configuring Antigravity rules, skills, plugins, and MCP connections. |
 
 Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS_GUIDE.md) for detailed workflows.

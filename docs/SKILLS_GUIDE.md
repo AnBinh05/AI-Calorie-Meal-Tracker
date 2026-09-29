@@ -34,6 +34,7 @@
 | **`api-designer`** | `/api-designer` | Thiết kế và chuẩn hóa hợp đồng RESTful API, DTOs và tài liệu OpenAPI 3/Swagger. |
 | **`code-reviewer`** | `/code-reviewer` | Đánh giá chất lượng code Full-Stack, kiểm tra chống AI slop, tuân thủ Design System. |
 | **`security-auditor`** | `/security-auditor` | Đánh giá an toàn thông tin, bảo mật JWT/Spring Security 6, phân quyền IDOR và chuẩn OWASP. |
+| **`ui-fixer`** | `/ui-fixer` | Vá nhanh các lỗi UI nhỏ cục bộ mà không làm ảnh hưởng đến kiến trúc toàn cục. |
 | **`agy-customizations`** | `/agy-customizations` | Hướng dẫn mở rộng và cấu hình thêm Skills, Rules, Plugins, MCP Servers cho Antigravity. |
 | **`antigravity-guide`** | `/antigravity-guide` | Cẩm nang tra cứu toàn diện về Antigravity CLI, IDE, Slash commands và Keybindings. |
 
