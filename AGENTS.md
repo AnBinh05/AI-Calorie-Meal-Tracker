@@ -129,6 +129,11 @@ This repository contains specialized skill guides in [`.agents/skills/`](file://
 | **`fixing-motion-performance`** | `/fixing-motion-performance` | Optimizing animations to 60fps (compositor properties `transform`, `opacity`, `prefers-reduced-motion`). |
 | **`fixing-metadata`** | `/fixing-metadata` | Optimizing SEO, Open Graph tags, social previews, and page metadata. |
 | **`create-design-md`** | `/create-design-md` | Extracting and synchronizing Figma design specifications into `DESIGN.md`. |
+| **`backend-developer`** | `/backend-developer` | Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Flash Vision & AWS S3. |
+| **`mobile-developer`** | `/mobile-developer` | React Native (Expo SDK 51), Camera flow, client image compression, Diary. |
+| **`api-designer`** | `/api-designer` | RESTful API contract modeling, DTO schemas, and OpenAPI/Swagger specs. |
+| **`code-reviewer`** | `/code-reviewer` | PR-style fullstack code reviews, anti-AI slop audit, and regression prevention. |
+| **`security-auditor`** | `/security-auditor` | Security audit, JWT verification, Spring Security 6 filters, IDOR and OWASP. |
 | **`agy-customizations`** | `/agy-customizations` | Configuring Antigravity rules, skills, plugins, and MCP connections. |
 
 Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS_GUIDE.md) for detailed workflows.

@@ -29,6 +29,11 @@
 | **`fixing-metadata`** | `/fixing-metadata` | Tối ưu thẻ SEO, Open Graph (OG Images), Twitter Cards, JSON-LD Structured Data và Favicons. |
 | **`create-design-md`** | `/create-design-md` | Tự động quét mã nguồn hoặc Figma specs để tạo tệp tài liệu `DESIGN.md` chuẩn cho dự án. |
 | **`ui-skills-root`** | `/ui-skills-root` | Điều phối tổng quan kiến trúc thiết kế kỹ thuật (Design Engineering). |
+| **`backend-developer`** | `/backend-developer` | Lập trình backend Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Vision & S3 Storage. |
+| **`mobile-developer`** | `/mobile-developer` | Lập trình mobile React Native (Expo SDK 51), luồng Camera, nén ảnh client và Review meal. |
+| **`api-designer`** | `/api-designer` | Thiết kế và chuẩn hóa hợp đồng RESTful API, DTOs và tài liệu OpenAPI 3/Swagger. |
+| **`code-reviewer`** | `/code-reviewer` | Đánh giá chất lượng code Full-Stack, kiểm tra chống AI slop, tuân thủ Design System. |
+| **`security-auditor`** | `/security-auditor` | Đánh giá an toàn thông tin, bảo mật JWT/Spring Security 6, phân quyền IDOR và chuẩn OWASP. |
 | **`agy-customizations`** | `/agy-customizations` | Hướng dẫn mở rộng và cấu hình thêm Skills, Rules, Plugins, MCP Servers cho Antigravity. |
 | **`antigravity-guide`** | `/antigravity-guide` | Cẩm nang tra cứu toàn diện về Antigravity CLI, IDE, Slash commands và Keybindings. |
 
