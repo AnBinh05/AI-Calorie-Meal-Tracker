@@ -25,12 +25,12 @@ spring:
       max-request-size: 15MB
 
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET:}
   expiration-ms: 86400000 # 24 hours
   refresh-expiration-ms: 604800000 # 7 days
 
 gemini:
-  api-key: ${GEMINI_API_KEY:demo_gemini_api_key}
+  api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-1.5-flash}
   api-url: https://generativelanguage.googleapis.com/v1beta/models
 
@@ -38,8 +38,8 @@ aws:
   s3:
     bucket-name: ${AWS_S3_BUCKET:calorie-tracker-meals}
     region: ${AWS_REGION:ap-southeast-1}
-    access-key: ${AWS_ACCESS_KEY_ID:mock_access_key}
-    secret-key: ${AWS_SECRET_ACCESS_KEY:mock_secret_key}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}
     enabled: ${AWS_S3_ENABLED:false}
 
 storage:

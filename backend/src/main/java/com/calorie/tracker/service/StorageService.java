@@ -56,7 +56,7 @@ public class StorageService {
 
         String uniqueFilename = UUID.randomUUID().toString() + extension;
 
-        if (s3Enabled && !accessKey.isBlank() && !secretKey.isBlank()) {
+        if (s3Enabled && accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
             try {
                 return uploadToS3(file, uniqueFilename);
             } catch (Exception e) {

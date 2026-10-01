@@ -80,8 +80,8 @@ SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/calorie_tracker_db
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
 
-# Bảo mật JWT
-JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+# Bảo mật JWT (Sinh chuỗi 256-bit an toàn bằng: openssl rand -base64 32)
+JWT_SECRET=your_base64_encoded_256bit_secret_key_here
 
 # Google Gemini Flash Vision API
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -216,14 +216,14 @@ Trong file [`backend/src/main/resources/application.yml`](file:///d:/AI-Calorie-
 
 ```yaml
 gemini:
-  api-key: ${GEMINI_API_KEY:demo_gemini_api_key}
+  api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-1.5-flash}
   api-url: https://generativelanguage.googleapis.com/v1beta/models
 ```
 
 > 💡 **Khuyến nghị:** Khai báo biến môi trường trên máy tính hoặc file `.env`:
 > ```bash
-> export GEMINI_API_KEY="AIzaSyYourSecretKeyHere"
+> export GEMINI_API_KEY="your_actual_gemini_api_key_from_google_ai_studio"
 > ```
 
 ### 5.4. Kỹ Thuật Prompt Engineering Cho Ẩm Thực Việt Nam
@@ -347,9 +347,9 @@ aws:
   s3:
     bucket-name: ${AWS_S3_BUCKET:calorie-tracker-meals}
     region: ${AWS_REGION:ap-southeast-1}
-    access-key: ${AWS_ACCESS_KEY_ID:your_access_key}
-    secret-key: ${AWS_SECRET_ACCESS_KEY:your_secret_key}
-    enabled: ${AWS_S3_ENABLED:true} # Đổi thành true để bật S3
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}
+    enabled: ${AWS_S3_ENABLED:false} # Chuyển true nếu sử dụng AWS S3
 
 storage:
   local-dir: ${LOCAL_STORAGE_DIR:./uploads}

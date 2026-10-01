@@ -204,30 +204,19 @@ AI-Calorie-Meal-Tracker/
    cd AI-Calorie-Meal-Tracker/backend
    ```
 
-2. **Cấu hình biến môi trường (`application.yml` hoặc file `.env`):**
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:postgresql://localhost:5432/calorie_tracker_db
-       username: postgres
-       password: your_password
-     jpa:
-       hibernate:
-         ddl-auto: update
-
-   jwt:
-     secret: your_jwt_super_secret_key_here
-     expiration-ms: 86400000
-
-   gemini:
-     api-key: your_gemini_flash_api_key
-
-   aws:
-     s3:
-       bucket-name: your-s3-bucket-name
-       access-key: your_aws_access_key
-       secret-key: your_aws_secret_key
-       region: ap-southeast-1
+2. **Cấu hình biến môi trường qua file `.env` (An toàn, không bị commit vào Git):**
+   ```bash
+   # Tạo file .env từ mẫu .env.example
+   cp .env.example .env
+   ```
+   Sau đó mở file `.env` và cập nhật các thông số của bạn:
+   ```bash
+   SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/calorie_tracker_db
+   SPRING_DATASOURCE_USERNAME=postgres
+   SPRING_DATASOURCE_PASSWORD=your_password
+   JWT_SECRET=your_base64_encoded_256bit_secret_key
+   GEMINI_API_KEY=your_gemini_flash_api_key
+   AWS_S3_ENABLED=false
    ```
 
 3. **Chạy ứng dụng Backend:**

@@ -169,5 +169,9 @@ Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS
 Before declaring any task complete:
 1. **Lint & Types**: Verify TypeScript builds without errors (`npm run build` in a test shell or `tsc --noEmit`).
 2. **Backend Compilation**: Ensure Maven compiles cleanly (`./mvnw clean compile -DskipTests`).
-3. **No Secret Leakage**: Never commit API keys (`GEMINI_API_KEY`, `AWS_SECRET_KEY`, `JWT_SECRET`). Ensure sensitive credentials reside exclusively in environment variables or `.env`.
+3. **🔴 Zero-Tolerance Secret Leakage Rule (Strictly Enforced)**:
+   - **Never hardcode or commit secrets**: API keys (`GEMINI_API_KEY`), cloud credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), auth secrets (`JWT_SECRET`), database passwords, or private keys into ANY tracked file (Java, TypeScript, YAML, JSON, Markdown, Docs).
+   - **Configuration Hygiene**: In `application.yml`, always use `${VARIABLE:}` with empty defaults (e.g. `${JWT_SECRET:}`). Never supply default fallback strings that look like valid keys. For local dev without env vars, services must generate ephemeral in-memory keys or fallback safely.
+   - **Environment Isolation**: Real credentials must reside exclusively in `.env` (gitignored) or system environment variables. Reference [`.env.example`](file:///d:/AI-Calorie-Meal-Tracker/.env.example) strictly with placeholders.
+   - **Pre-Commit Diff Audit**: Always inspect diffs before committing to verify zero credential tokens (e.g., `AIzaSy...`, `AKIA...`, private keys, hex secrets) are leaked.
 4. **Git Hygiene**: Create descriptive commits (e.g., `feat(web): add macro donut chart component`, `fix(ai): handle null portion size in gemini parser`).

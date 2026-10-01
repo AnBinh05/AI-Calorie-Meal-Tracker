@@ -24,12 +24,17 @@ build/
 *.mobileprovision
 *.orig.*
 
-# Environment variables & secrets
+# Environment variables & secrets (Strictly blocked from Git)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.pkcs12
+*.pfx
+*.keystore
+credentials.json
+service-account*.json
 
 # IDEs
 .idea/
