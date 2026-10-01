@@ -184,53 +184,243 @@ flowchart LR
 
 ---
 
-## 🤖 5. Quy Chuẩn Xử Lý AI Vision & Meal Data Pipeline
+## 🤖 5. Hướng Dẫn Tích Hợp Chi Tiết Google Gemini Flash Vision API
 
-Module xử lý ảnh với **Google Gemini Flash Vision** là trái tim của hệ thống **NutriAI**. Mọi developer cần nắm rõ pipeline sau:
+Module xử lý ảnh với **Google Gemini Flash Vision** là tính năng cốt lõi tạo nên sự thông minh vượt trội của **NutriAI**. Dịch vụ này phân tích ảnh món ăn người dùng chụp hoặc tải lên, tự động nhận dạng các món ăn thành phần, ước lượng khối lượng (gram), tính toán chỉ số Calories & Macros (Protein, Carbs, Fat) và đưa ra lời khuyên dinh dưỡng hữu ích.
 
-```text
-[Mobile / Web Client]
-       │ (1) Ảnh đã nén client-side <= 2MB
-       ▼
-POST /api/v1/meals/analyze
-       │
-       ├─► (2) StorageService: Lưu ảnh vào S3 hoặc Local Storage (lấy URL công khai)
-       │
-       ├─► (3) GeminiVisionService: Gửi Multipart + System Prompt ép cấu trúc JSON
-       │
-       ├─► (4) JSON Parser: Parse kết quả thành MealAnalysisResponse DTO
-       │
-       ▼ (5) Trả kết quả Draft cho Client xem trước (Review Screen / Modal)
-[Người Dùng Chỉnh Sửa Khối Lượng / Món Ăn]
-       │
-       ▼ (6) Xác nhận lưu
-POST /api/v1/meals (Persist vào PostgreSQL)
+### 5.1. Kiến Trúc & Cơ Chế Hoạt Động (`GeminiVisionService`)
+Mã nguồn triển khai tại: [`backend/src/main/java/com/calorie/tracker/service/GeminiVisionService.java`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/java/com/calorie/tracker/service/GeminiVisionService.java).
+
+```mermaid
+flowchart TD
+    A["MultipartFile (Image)"] --> B["Base64 Encode (inline_data)"]
+    B --> C["Kèm System Prompt Tiếng Việt<br/>(Ép định dạng JSON DTO)"]
+    C --> D["POST Google Generative Language API<br/><code>/models/gemini-1.5-flash:generateContent</code>"]
+    D --> E{"Phản hồi API"}
+    E -->|Thành công| F["Jackson ObjectMapper<br/>Parse thành <code>MealAnalysisResponse</code>"]
+    E -->|Lỗi / Quota / Thiếu Key| G["Fallback Data Generator<br/>Trả về dữ liệu mẫu thông minh"]
 ```
 
-### ⚠️ 3 Nguyên Tắc Cốt Lõi Khi Làm AI Vision:
-1. **Tuyệt đối không lưu trực tiếp vào DB khi vừa scan xong (Draft & Review Flow):** Endpoint `/analyze` chỉ trả về bản nháp. Chỉ khi người dùng bấm "Lưu vào nhật ký" thì mới gọi `POST /api/v1/meals` để lưu vào DB.
-2. **Ép Gemini trả về JSON có cấu trúc chính xác:** Trong prompt, định nghĩa rõ ràng cấu trúc JSON mong muốn:
+* **Model sử dụng:** `gemini-1.5-flash` — Dòng model tối ưu tốc độ phản hồi nhanh (< 1.5 giây), chi phí thấp và hỗ trợ thị giác máy tính đa phương thức (Multimodal Vision).
+* **Truyền tải hình ảnh:** Ảnh nhị phân được mã hóa `Base64` và gửi qua payload `inline_data` với MIME type tự động phát hiện (`image/jpeg`, `image/png`, `image/webp`).
+
+### 5.2. Cách Lấy Google Gemini API Key Miễn Phí
+1. Truy cập **Google AI Studio**: [https://aistudio.google.com/](https://aistudio.google.com/)
+2. Đăng nhập bằng tài khoản Google của bạn.
+3. Bấm nút **Get API key** ở thanh menu bên trái.
+4. Chọn **Create API key in new project** (hoặc chọn project Google Cloud sẵn có).
+5. Copy chuỗi API Key được cấp (có tiền tố `AIzaSy...`).
+
+### 5.3. Cấu Hình Ứng Dụng (`application.yml`)
+Trong file [`backend/src/main/resources/application.yml`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/resources/application.yml):
+
+```yaml
+gemini:
+  api-key: ${GEMINI_API_KEY:demo_gemini_api_key}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  api-url: https://generativelanguage.googleapis.com/v1beta/models
+```
+
+> 💡 **Khuyến nghị:** Khai báo biến môi trường trên máy tính hoặc file `.env`:
+> ```bash
+> export GEMINI_API_KEY="AIzaSyYourSecretKeyHere"
+> ```
+
+### 5.4. Kỹ Thuật Prompt Engineering Cho Ẩm Thực Việt Nam
+Để đảm bảo Gemini nhận dạng chính xác các món ăn đặc thù Việt Nam (Cơm tấm sườn bì chả, Phở bò tái nạm, Bún chả, Bánh mì kẹp thịt...) và trả về dữ liệu số học ổn định:
+
+1. **System Prompt Tiếng Việt Chuyên Gia:** Ép model đóng vai trò chuyên gia dinh dưỡng và thị giác máy tính.
+2. **Ép Định Dạng JSON Tuyệt Đối:** Yêu cầu Gemini **DUY NHẤT** trả về chuỗi JSON hợp lệ, không bọc các thẻ markdown như ````json ```` hay ghi thêm lời chào dẫn.
+3. **Cấu Trúc JSON Yêu Cầu:**
    ```json
    {
-     "detectedFoods": [
+     "suggestedMealName": "Cơm tấm sườn nướng trứng ốp la",
+     "estimatedTotalCalories": 680.0,
+     "estimatedTotalProtein": 32.0,
+     "estimatedTotalCarbs": 75.0,
+     "estimatedTotalFat": 24.0,
+     "healthTip": "Bữa ăn giàu đạm nhưng hơi nhiều dầu mỡ từ mỡ hành và trứng rán. Nên bổ sung thêm dưa leo, cà chua để tăng cường chất xơ!",
+     "recognizedItems": [
        {
-         "name": "Tên món ăn (Tiếng Việt)",
-         "estimatedGrams": 150,
-         "calories": 250,
-         "carbs": 30.5,
-         "protein": 12.0,
-         "fat": 8.0,
-         "confidence": 0.95
+         "name": "Cơm tấm",
+         "estimatedWeightGrams": 180.0,
+         "servingSize": "1 bát vừa",
+         "calories": 234.0,
+         "protein": 4.5,
+         "carbs": 50.4,
+         "fat": 0.6,
+         "fiber": 1.2,
+         "confidenceScore": 0.96
+       },
+       {
+         "name": "Sườn heo nướng",
+         "estimatedWeightGrams": 120.0,
+         "servingSize": "1 miếng lớn",
+         "calories": 310.0,
+         "protein": 22.0,
+         "carbs": 4.0,
+         "fat": 18.0,
+         "fiber": 0.0,
+         "confidenceScore": 0.92
        }
-     ],
-     "healthTips": "Lời khuyên dinh dưỡng từ chuyên gia AI"
+     ]
    }
    ```
-3. **Cơ chế Fallback & Timeout:** Luôn có `try/catch` bọc ngoài cuộc gọi Gemini. Nếu API timeout (>15s) hoặc gặp sự cố quota, ném ngoại lệ rõ ràng để client hiển thị form nhập thủ công cho người dùng.
+4. **Siêu tham số tối ưu (Generation Config):**
+   * `temperature: 0.2`: Giữ nhiệt độ thấp để số liệu Calo/Macros ít bị biến động ngẫu nhiên qua các lần gọi.
+   * `topK: 32`, `topP: 1.0`: Giới hạn không gian lấy mẫu từ ngữ chính xác.
+   * `maxOutputTokens: 2048`: Đảm bảo đủ độ dài cho danh sách nhiều món ăn phức tạp.
+
+### 5.5. Cơ Chế Mock Fallback Thông Minh
+Khi biến `GEMINI_API_KEY` chưa được gán hoặc khi mạng ngoại tuyến/hết hạn mức API:
+* `GeminiVisionService` **không ném Exception làm sập luồng**.
+* Hệ thống tự động kích hoạt `getFallbackAnalysis(imageUrl)` trả về dữ liệu mẫu bữa ăn giàu dinh dưỡng (Cơm gạo lứt, Ức gà áp chảo, Bông cải xanh luộc).
+* Điều này giúp đội ngũ Frontend (React Web & React Native) luôn có dữ liệu sống để phát triển giao diện liên tục mà không bị gián đoạn.
+
+### 5.6. Cách Kiểm Thử Endpoint Phân Tích Ảnh
+Bạn có thể gọi trực tiếp endpoint `POST /api/v1/meals/analyze` bằng cURL:
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/meals/analyze" \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "image=@/path/to/meal-photo.jpg"
+```
 
 ---
 
-## 📊 6. Danh Mục Endpoints Hiện Tại (API Directory)
+## ☁️ 6. Hướng Dẫn Tích Hợp AWS S3 & Kiến Trúc Lưu Trữ Kép (Dual Storage)
+
+Hệ thống lưu trữ ảnh của **NutriAI** hỗ trợ cơ chế **Dual Storage** (Lưu trữ kép) linh hoạt:
+* **Production:** Tải ảnh trực tiếp lên **AWS S3** (hoặc Cloudflare R2 / MinIO) với độ sẵn sàng cao và phân phối CDN toàn cầu.
+* **Development / Offline:** Tự động fallback lưu cục bộ vào thư mục `./uploads/` trên máy chủ và phục vụ qua HTTP tĩnh mà không cần tài khoản AWS.
+
+Mã nguồn triển khai tại:
+* Service: [`backend/src/main/java/com/calorie/tracker/service/StorageService.java`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/java/com/calorie/tracker/service/StorageService.java)
+* Cấu hình phục vụ file tĩnh: [`backend/src/main/java/com/calorie/tracker/config/WebMvcConfig.java`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/java/com/calorie/tracker/config/WebMvcConfig.java)
+
+### 6.1. Kiến Trúc Luồng Lưu Trữ Ảnh
+
+```mermaid
+flowchart TD
+    Upload["Client upload file ảnh"] --> Check{"aws.s3.enabled == true<br/>&& có Access/Secret Key?"}
+    Check -->|Có| S3["AWS SDK v2 S3Client<br/>Upload lên S3 Bucket"]
+    S3 -->|Thành công| S3URL["Trả về URL: https://bucket.s3.region.amazonaws.com/meals/uuid.jpg"]
+    S3 -->|Lỗi mạng / Quota| Fallback["Catch Exception & Fallback"]
+    Check -->|Không| Local["Lưu vào thư mục cục bộ ./uploads/"]
+    Fallback --> Local
+    Local --> LocalURL["Trả về URL: /uploads/uuid.jpg"]
+    LocalURL --> Serve["WebMvcConfig ánh xạ /uploads/**<br/>SecurityConfig permitAll()"]
+```
+
+### 6.2. Các Bước Thiết Lập AWS S3 Console
+Nếu muốn kích hoạt AWS S3 thật cho môi trường Production:
+
+1. **Tạo S3 Bucket:**
+   * Mở AWS Console ➔ Truy cập dịch vụ **Amazon S3** ➔ Bấm **Create bucket**.
+   * Đặt **Bucket name**: `calorie-tracker-meals` (hoặc tên duy nhất của bạn).
+   * Chọn **AWS Region**: `ap-southeast-1` (Singapore) hoặc gần người dùng nhất.
+   * Bỏ chọn *Block all public access* nếu cần xem ảnh công khai (hoặc dùng CloudFront distribution).
+2. **Cấu hình Bucket CORS (Cho phép Mobile & Web Dashboard tải ảnh):**
+   Trong tab **Permissions** ➔ **Cross-origin resource sharing (CORS)**, dán cấu hình:
+   ```json
+   [
+     {
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "HEAD"],
+       "AllowedOrigins": ["*"],
+       "ExposeHeaders": []
+     }
+   ]
+   ```
+3. **Tạo IAM User & Lấy Credentials:**
+   * Vào dịch vụ **AWS IAM** ➔ **Users** ➔ **Create user** (ví dụ: `nutriai-s3-uploader`).
+   * Gắn quyền: Chọn **Attach policies directly** ➔ Gắn quyền `AmazonS3FullAccess` (hoặc custom policy chỉ cấp `s3:PutObject` và `s3:GetObject` trên bucket `calorie-tracker-meals/*`).
+   * Trong tab **Security credentials** ➔ Bấm **Create access key** ➔ Chọn *Application running outside AWS*.
+   * Lưu lại **Access Key ID** và **Secret Access Key**.
+
+### 6.3. Cấu Hình Biến Môi Trường AWS S3 (`application.yml`)
+Trong file [`backend/src/main/resources/application.yml`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/resources/application.yml):
+
+```yaml
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:calorie-tracker-meals}
+    region: ${AWS_REGION:ap-southeast-1}
+    access-key: ${AWS_ACCESS_KEY_ID:your_access_key}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:your_secret_key}
+    enabled: ${AWS_S3_ENABLED:true} # Đổi thành true để bật S3
+
+storage:
+  local-dir: ${LOCAL_STORAGE_DIR:./uploads}
+```
+
+### 6.4. Xử Lý Tên File & Bảo Mật Trong `StorageService`
+* **Ngăn chặn ghi đè & tấn công Path Traversal:** File được đổi tên ngẫu nhiên bằng `UUID.randomUUID().toString() + extension` (ví dụ `d3b07384-d113-4f44-90f7-5e60d3b6f8a8.jpg`).
+* **Giới hạn dung lượng:** File kích thước tối đa 15MB qua cấu hình `spring.servlet.multipart.max-file-size: 15MB`. Client (Mobile/Web) được khuyến nghị nén xuống <= 2MB trước khi gửi.
+* **Tự động khôi phục (Fault Tolerance):** Nếu kết nối S3 bị gián đoạn, `StorageService` bắt `Exception`, ghi warning log và tự động chuyển sang lưu local mà không làm crash transaction của người dùng.
+
+### 6.5. Cấu Hình Phục Vụ Tệp Cục Bộ (`WebMvcConfig`)
+Khi chạy local với `AWS_S3_ENABLED=false`, ứng dụng sử dụng [`WebMvcConfig.java`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/java/com/calorie/tracker/config/WebMvcConfig.java) để ánh xạ URL `/uploads/**` tới thư mục đĩa cục bộ:
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Value("${storage.local-dir:./uploads}")
+    private String localStorageDir;
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path uploadDir = Paths.get(localStorageDir).toAbsolutePath().normalize();
+        String uploadPath = uploadDir.toUri().toString();
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadPath.endsWith("/") ? uploadPath : uploadPath + "/");
+    }
+}
+```
+Đồng thời, trong [`SecurityConfig.java`](file:///d:/AI-Calorie-Meal-Tracker/backend/src/main/java/com/calorie/tracker/config/SecurityConfig.java), đường dẫn `/uploads/**` đã được cấu hình `.permitAll()` để các ứng dụng phía client có thể tải và hiển thị ảnh bữa ăn tự do.
+
+---
+
+## 🔄 7. Luồng Tích Hợp Hoàn Chỉnh: S3 Storage + Gemini Vision + PostgreSQL
+
+Toàn bộ quy trình từ lúc người dùng chụp ảnh đến khi lưu trữ dữ liệu vào CSDL diễn ra qua 2 giai đoạn độc lập tuân thủ nguyên tắc **Draft & Review Flow**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Người dùng (App / Web)
+    participant Client as Frontend Client
+    participant Controller as MealController (/analyze)
+    participant Storage as StorageService (S3 / Local)
+    participant Gemini as GeminiVisionService (AI Flash)
+    participant DB as PostgreSQL Database
+
+    Note over User, DB: GIAI ĐOẠN 1: SCAN ẢNH & TẠO BẢN NHÁP (DRAFT)
+    User->>Client: Chụp ảnh bữa ăn
+    Client->>Client: Nén ảnh client-side (<= 2MB)
+    Client->>Controller: POST /api/v1/meals/analyze (multipart image)
+    Controller->>Storage: storeFile(imageFile)
+    Storage-->>Controller: Trả về imageUrl (S3 hoặc /uploads/...)
+    Controller->>Gemini: analyzeMealImage(imageFile, imageUrl)
+    Gemini-->>Controller: Trả về MealAnalysisResponse (tính Calo, Macros, Món ăn)
+    Controller-->>Client: 200 OK với DTO nháp + imageUrl
+
+    Note over User, DB: GIAI ĐOẠN 2: NGƯỜI DÙNG XEM LẠI & LƯU VÀO DB
+    Client->>User: Hiển thị Modal/Màn hình Review<br/>(Chỉnh sửa số gram, thêm bớt món ăn)
+    User->>Client: Xác nhận "Lưu vào nhật ký"
+    Client->>Controller: POST /api/v1/meals (Kèm MealCreateRequestDTO chính xác)
+    Controller->>DB: Persist Meal & MealItem entities (@Transactional)
+    DB-->>Controller: Saved Meal Entity
+    Controller-->>Client: 201 Created (MealResponseDTO)
+    Client-->>User: Cập nhật chỉ số Calo ngày & Macro Donut Chart
+```
+
+---
+
+## 📊 8. Danh Mục Endpoints Hiện Tại (API Directory)
 
 | Nhóm chức năng | Phương thức | Endpoint | Mô tả | Yêu cầu Auth |
 | :--- | :--- | :--- | :--- | :--- |
@@ -239,7 +429,7 @@ POST /api/v1/meals (Persist vào PostgreSQL)
 | | `POST` | `/api/v1/auth/refresh` | Làm mới Access Token khi hết hạn | ❌ Public |
 | **Health Profile** | `GET` | `/api/v1/health-profile/me` | Lấy hồ sơ chỉ số cơ thể, BMR, TDEE | 🔒 Bearer JWT |
 | | `PUT` | `/api/v1/health-profile/me` | Cập nhật cân nặng, chiều cao, mục tiêu | 🔒 Bearer JWT |
-| **Meal Tracking** | `POST` | `/api/v1/meals/analyze` | Gửi ảnh phân tích calo qua Gemini Vision | 🔒 Bearer JWT |
+| **Meal Tracking** | `POST` | `/api/v1/meals/analyze` | Gửi ảnh phân tích calo qua Gemini Vision & lưu trữ ảnh | 🔒 Bearer JWT |
 | | `POST` | `/api/v1/meals` | Lưu bữa ăn vào nhật ký | 🔒 Bearer JWT |
 | | `GET` | `/api/v1/meals/daily` | Lấy danh sách bữa ăn theo ngày (`?date=yyyy-MM-dd`) | 🔒 Bearer JWT |
 | | `DELETE` | `/api/v1/meals/{id}` | Xóa một bữa ăn | 🔒 Bearer JWT |
@@ -250,7 +440,7 @@ POST /api/v1/meals (Persist vào PostgreSQL)
 
 ---
 
-## ✅ 7. Checklist Kiểm Thử Trước Khi Commit & Tạo PR
+## ✅ 9. Checklist Kiểm Thử Trước Khi Commit & Tạo PR
 
 Trước khi tạo commit và gửi PR lên nhánh `develop`, hãy tự kiểm tra theo checklist sau:
 
@@ -258,11 +448,13 @@ Trước khi tạo commit và gửi PR lên nhánh `develop`, hãy tự kiểm t
 - [ ] **Không hardcode thông tin nhạy cảm:** Không commit API Keys, Password DB, JWT Secret vào Git.
 - [ ] **Validation đầu vào:** Mọi trường bắt buộc trong Request DTO đều có `@NotNull`, `@NotBlank`, `@Positive`.
 - [ ] **Bảo vệ IDOR:** Mọi thao tác tìm kiếm/cập nhật `Meal` đều có điều kiện `AND user.id = :currentUserId`.
+- [ ] **Tương thích Storage & Gemini:** Đã kiểm thử luồng `/api/v1/meals/analyze` với cả trường hợp offline mock và online.
 - [ ] **Cập nhật Swagger / OpenAPI:** Các Controller và DTO có chú thích `@Operation`, `@Schema` rõ ràng.
 - [ ] **Đặt tên commit chuẩn Conventional Commits:**
   * `feat(backend): implement gemini vision meal analysis endpoint`
-  * `fix(auth): handle expired refresh token gracefully`
+  * `fix(storage): add graceful fallback when s3 credentials are not set`
   * `refactor(meal): optimize daily meal fetch query with join fetch`
 
 ---
 *Tài liệu được quản lý bởi NutriAI Development Team. Mọi đóng góp và thắc mắc vui lòng trao đổi trực tiếp trên nhánh `develop`.*
+
