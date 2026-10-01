@@ -43,7 +43,8 @@ AI-Calorie-Meal-Tracker/
 │
 ├── docs/                     # Specifications, Figma specs, Guides, PRDs
 │   ├── SKILLS_GUIDE.md       # Antigravity Skills guide
-│   └── TEAM_UI_DEVELOPMENT_GUIDE.md # Team execution roadmap
+│   ├── TEAM_UI_DEVELOPMENT_GUIDE.md # Team execution roadmap
+│   └── BACKEND_DEVELOPMENT_GUIDE.md # Spring Boot 3 & Java 17 backend onboarding guide
 ├── tasks/                    # Task trackers & feature specifications
 ├── .agents/skills/           # Repository-specific AI Agent Skills
 ├── DESIGN.md                 # Design tokens, color system, and UI rules
