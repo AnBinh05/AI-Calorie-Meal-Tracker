@@ -22,7 +22,6 @@ public interface FavoriteMealRepository extends JpaRepository<FavoriteMeal, Long
 
     Page<FavoriteMeal> findByUserId(Long userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"items"})
     @Query("SELECT f FROM FavoriteMeal f WHERE f.user.id = :userId " +
            "AND (:mealType IS NULL OR f.mealType = :mealType) " +
            "AND (:keyword IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")

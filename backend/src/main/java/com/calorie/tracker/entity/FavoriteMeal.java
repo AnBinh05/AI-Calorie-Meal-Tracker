@@ -2,6 +2,7 @@ package com.calorie.tracker.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -58,6 +59,7 @@ public class FavoriteMeal {
     @Builder.Default
     private Integer usageCount = 0;
 
+    @BatchSize(size = 25)
     @OneToMany(mappedBy = "favoriteMeal", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<FavoriteMealItem> items = new ArrayList<>();

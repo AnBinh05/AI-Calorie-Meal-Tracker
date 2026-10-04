@@ -2,6 +2,7 @@ package com.calorie.tracker.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -60,6 +61,7 @@ public class Meal {
     @Builder.Default
     private Double totalFat = 0.0;
 
+    @BatchSize(size = 25)
     @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MealItem> items = new ArrayList<>();
