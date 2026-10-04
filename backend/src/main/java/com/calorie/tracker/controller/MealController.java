@@ -11,11 +11,13 @@ import com.calorie.tracker.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/meals")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "3. Meals & AI Analysis", description = "Phân tích ảnh món ăn bằng Gemini AI và quản lý nhật ký bữa ăn")
 public class MealController {
 
@@ -62,7 +65,9 @@ public class MealController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy chi tiết một bữa ăn theo ID")
-    public ResponseEntity<ApiResponse<MealDto>> getMealById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MealDto>> getMealById(
+            @PathVariable @Positive(message = "ID bữa ăn phải là số nguyên dương") Long id
+    ) {
         MealDto mealDto = mealService.getMealById(id);
         return ResponseEntity.ok(ApiResponse.ok(mealDto));
     }
@@ -70,7 +75,7 @@ public class MealController {
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật thông tin bữa ăn")
     public ResponseEntity<ApiResponse<MealDto>> updateMeal(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "ID bữa ăn phải là số nguyên dương") Long id,
             @Valid @RequestBody UpdateMealRequest request
     ) {
         MealDto mealDto = mealService.updateMeal(id, request);
@@ -79,7 +84,9 @@ public class MealController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa một bữa ăn")
-    public ResponseEntity<ApiResponse<Void>> deleteMeal(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteMeal(
+            @PathVariable @Positive(message = "ID bữa ăn phải là số nguyên dương") Long id
+    ) {
         mealService.deleteMeal(id);
         return ResponseEntity.ok(ApiResponse.ok("Xóa bữa ăn thành công", null));
     }
