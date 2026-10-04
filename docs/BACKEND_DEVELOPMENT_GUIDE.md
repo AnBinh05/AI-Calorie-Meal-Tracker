@@ -437,6 +437,12 @@ sequenceDiagram
 | | `GET` | `/api/v1/analytics/weekly` | Biểu đồ xu hướng dinh dưỡng 7 ngày qua | 🔒 Bearer JWT |
 | | `GET` | `/api/v1/analytics/export/csv` | Xuất dữ liệu nhật ký dinh dưỡng dạng CSV | 🔒 Bearer JWT |
 | | `GET` | `/api/v1/analytics/export/pdf` | Xuất báo cáo dinh dưỡng tổng hợp dạng PDF | 🔒 Bearer JWT |
+| **Favorite Meals** *(Mới)* | `GET` | `/api/v1/meals/favorites` | Lấy danh sách món ăn yêu thích (phân trang, lọc, tìm kiếm) | 🔒 Bearer JWT |
+| *(Xem [Contract](file:///d:/AI-Calorie-Meal-Tracker/docs/FAVORITE_MEALS_API_CONTRACT.md))* | `POST` | `/api/v1/meals/favorites` | Tạo món yêu thích mới thủ công | 🔒 Bearer JWT |
+| | `POST` | `/api/v1/meals/favorites/from-meal/{mealId}` | Bookmark từ bữa ăn đã log thành món yêu thích | 🔒 Bearer JWT |
+| | `PUT` | `/api/v1/meals/favorites/{id}` | Cập nhật thông tin món yêu thích | 🔒 Bearer JWT |
+| | `DELETE` | `/api/v1/meals/favorites/{id}` | Xóa một món khỏi danh sách yêu thích | 🔒 Bearer JWT |
+| | `POST` | `/api/v1/meals/favorites/{id}/log` | Ghi nhận nhanh (Quick Log) vào nhật ký hôm nay | 🔒 Bearer JWT |
 
 ---
 
