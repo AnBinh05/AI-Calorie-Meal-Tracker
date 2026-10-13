@@ -137,6 +137,7 @@ This repository contains specialized skill guides in [`.agents/skills/`](file://
 | **`security-auditor`** | `/security-auditor` | Security audit, JWT verification, Spring Security 6 filters, IDOR and OWASP. |
 | **`ui-fixer`** | `/ui-fixer` | Precision UI fixes and small-scale bug patches without collateral refactoring. |
 | **`open-code-review`** | `/open-code-review` or `/ocr` | Enterprise AI code review, vulnerability detection (NPE, concurrency, security), based on Alibaba Open Code Review (ocr). |
+| **`code-review-skill`** | `/code-review-skill` | Multi-ecosystem code review (React 19, TypeScript, Java/Spring Boot, Python, Go) from awesome-skills. |
 | **`agy-customizations`** | `/agy-customizations` | Configuring Antigravity rules, skills, plugins, and MCP connections. |
 
 Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS_GUIDE.md) for detailed workflows.

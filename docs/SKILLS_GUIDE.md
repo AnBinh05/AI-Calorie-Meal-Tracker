@@ -36,6 +36,7 @@
 | **`security-auditor`** | `/security-auditor` | Đánh giá an toàn thông tin, bảo mật JWT/Spring Security 6, phân quyền IDOR và chuẩn OWASP. |
 | **`ui-fixer`** | `/ui-fixer` | Vá nhanh các lỗi UI nhỏ cục bộ mà không làm ảnh hưởng đến kiến trúc toàn cục. |
 | **`open-code-review`** | `/open-code-review` hoặc `/ocr` | Đánh giá mã nguồn doanh nghiệp, quét lỗi NPE, Concurrency, Bảo mật theo kiến trúc Hybrid của Alibaba OCR. |
+| **`code-review-skill`** | `/code-review-skill` | Bộ hướng dẫn review đa hệ sinh thái (React 19, TS, Spring Boot, Go, Python) từ awesome-skills. |
 | **`agy-customizations`** | `/agy-customizations` | Hướng dẫn mở rộng và cấu hình thêm Skills, Rules, Plugins, MCP Servers cho Antigravity. |
 | **`antigravity-guide`** | `/antigravity-guide` | Cẩm nang tra cứu toàn diện về Antigravity CLI, IDE, Slash commands và Keybindings. |
 
