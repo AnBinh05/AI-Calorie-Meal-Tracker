@@ -33,7 +33,7 @@ public class GeminiVisionService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public MealAnalysisResponse analyzeMealImage(MultipartFile imageFile, String imageUrl) {
-        if (apiKey == null || apiKey.isBlank() || apiKey.equals("demo_gemini_api_key")) {
+        if (apiKey == null || apiKey.isBlank()) {
             log.warn("Gemini API key chưa được cấu hình. Sử dụng dữ liệu mô phỏng thông minh cho phát triển...");
             return getFallbackAnalysis(imageUrl);
         }

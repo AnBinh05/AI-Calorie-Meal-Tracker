@@ -14,9 +14,9 @@ Follow these guidelines strictly to ensure code quality, architectural consisten
 
 ```text
 AI-Calorie-Meal-Tracker/
-├── backend/                  # Spring Boot 3.2.5 REST API (Java 17, JPA, PostgreSQL, S3, Gemini)
+├── backend/                  # Spring Boot 3.2.5 REST API (Java 17, JPA, PostgreSQL, Supabase Storage, Gemini)
 │   ├── src/main/java/com/calorie/tracker/
-│   │   ├── config/           # Security (JWT, OAuth2), S3, Gemini Flash Vision configs
+│   │   ├── config/           # Security (JWT, OAuth2), Supabase, Gemini Flash Vision configs
 │   │   ├── controller/       # REST endpoints (/api/v1/...)
 │   │   ├── dto/              # Request / Response DTOs
 │   │   ├── entity/           # JPA Entities (User, Meal, MealItem, HealthProfile)
@@ -43,7 +43,8 @@ AI-Calorie-Meal-Tracker/
 │
 ├── docs/                     # Specifications, Figma specs, Guides, PRDs
 │   ├── SKILLS_GUIDE.md       # Antigravity Skills guide
-│   └── TEAM_UI_DEVELOPMENT_GUIDE.md # Team execution roadmap
+│   ├── TEAM_UI_DEVELOPMENT_GUIDE.md # Team execution roadmap
+│   └── BACKEND_DEVELOPMENT_GUIDE.md # Spring Boot 3 & Java 17 backend onboarding guide
 ├── tasks/                    # Task trackers & feature specifications
 ├── .agents/skills/           # Repository-specific AI Agent Skills
 ├── DESIGN.md                 # Design tokens, color system, and UI rules
@@ -129,6 +130,14 @@ This repository contains specialized skill guides in [`.agents/skills/`](file://
 | **`fixing-motion-performance`** | `/fixing-motion-performance` | Optimizing animations to 60fps (compositor properties `transform`, `opacity`, `prefers-reduced-motion`). |
 | **`fixing-metadata`** | `/fixing-metadata` | Optimizing SEO, Open Graph tags, social previews, and page metadata. |
 | **`create-design-md`** | `/create-design-md` | Extracting and synchronizing Figma design specifications into `DESIGN.md`. |
+| **`backend-developer`** | `/backend-developer` | Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Flash Vision & Supabase Storage. |
+| **`mobile-developer`** | `/mobile-developer` | React Native (Expo SDK 51), Camera flow, client image compression, Diary. |
+| **`api-designer`** | `/api-designer` | RESTful API contract modeling, DTO schemas, and OpenAPI/Swagger specs. |
+| **`code-reviewer`** | `/code-reviewer` | PR-style fullstack code reviews, anti-AI slop audit, and regression prevention. |
+| **`security-auditor`** | `/security-auditor` | Security audit, JWT verification, Spring Security 6 filters, IDOR and OWASP. |
+| **`ui-fixer`** | `/ui-fixer` | Precision UI fixes and small-scale bug patches without collateral refactoring. |
+| **`open-code-review`** | `/open-code-review` or `/ocr` | Enterprise AI code review, vulnerability detection (NPE, concurrency, security), based on Alibaba Open Code Review (ocr). |
+| **`code-review-skill`** | `/code-review-skill` | Multi-ecosystem code review (React 19, TypeScript, Java/Spring Boot, Python, Go) from awesome-skills. |
 | **`agy-customizations`** | `/agy-customizations` | Configuring Antigravity rules, skills, plugins, and MCP connections. |
 
 Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS_GUIDE.md) for detailed workflows.
@@ -162,5 +171,9 @@ Refer to [`docs/SKILLS_GUIDE.md`](file:///d:/AI-Calorie-Meal-Tracker/docs/SKILLS
 Before declaring any task complete:
 1. **Lint & Types**: Verify TypeScript builds without errors (`npm run build` in a test shell or `tsc --noEmit`).
 2. **Backend Compilation**: Ensure Maven compiles cleanly (`./mvnw clean compile -DskipTests`).
-3. **No Secret Leakage**: Never commit API keys (`GEMINI_API_KEY`, `AWS_SECRET_KEY`, `JWT_SECRET`). Ensure sensitive credentials reside exclusively in environment variables or `.env`.
+3. **🔴 Zero-Tolerance Secret Leakage Rule (Strictly Enforced)**:
+   - **Never hardcode or commit secrets**: API keys (`GEMINI_API_KEY`), cloud credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), auth secrets (`JWT_SECRET`), database passwords, or private keys into ANY tracked file (Java, TypeScript, YAML, JSON, Markdown, Docs).
+   - **Configuration Hygiene**: In `application.yml`, always use `${VARIABLE:}` with empty defaults (e.g. `${JWT_SECRET:}`). Never supply default fallback strings that look like valid keys. For local dev without env vars, services must generate ephemeral in-memory keys or fallback safely.
+   - **Environment Isolation**: Real credentials must reside exclusively in `.env` (gitignored) or system environment variables. Reference [`.env.example`](file:///d:/AI-Calorie-Meal-Tracker/.env.example) strictly with placeholders.
+   - **Pre-Commit Diff Audit**: Always inspect diffs before committing to verify zero credential tokens (e.g., `AIzaSy...`, `AKIA...`, private keys, hex secrets) are leaked.
 4. **Git Hygiene**: Create descriptive commits (e.g., `feat(web): add macro donut chart component`, `fix(ai): handle null portion size in gemini parser`).

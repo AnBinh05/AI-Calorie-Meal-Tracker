@@ -29,6 +29,14 @@
 | **`fixing-metadata`** | `/fixing-metadata` | Tối ưu thẻ SEO, Open Graph (OG Images), Twitter Cards, JSON-LD Structured Data và Favicons. |
 | **`create-design-md`** | `/create-design-md` | Tự động quét mã nguồn hoặc Figma specs để tạo tệp tài liệu `DESIGN.md` chuẩn cho dự án. |
 | **`ui-skills-root`** | `/ui-skills-root` | Điều phối tổng quan kiến trúc thiết kế kỹ thuật (Design Engineering). |
+| **`backend-developer`** | `/backend-developer` | Lập trình backend Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Vision & S3 Storage. |
+| **`mobile-developer`** | `/mobile-developer` | Lập trình mobile React Native (Expo SDK 51), luồng Camera, nén ảnh client và Review meal. |
+| **`api-designer`** | `/api-designer` | Thiết kế và chuẩn hóa hợp đồng RESTful API, DTOs và tài liệu OpenAPI 3/Swagger. |
+| **`code-reviewer`** | `/code-reviewer` | Đánh giá chất lượng code Full-Stack, kiểm tra chống AI slop, tuân thủ Design System. |
+| **`security-auditor`** | `/security-auditor` | Đánh giá an toàn thông tin, bảo mật JWT/Spring Security 6, phân quyền IDOR và chuẩn OWASP. |
+| **`ui-fixer`** | `/ui-fixer` | Vá nhanh các lỗi UI nhỏ cục bộ mà không làm ảnh hưởng đến kiến trúc toàn cục. |
+| **`open-code-review`** | `/open-code-review` hoặc `/ocr` | Đánh giá mã nguồn doanh nghiệp, quét lỗi NPE, Concurrency, Bảo mật theo kiến trúc Hybrid của Alibaba OCR. |
+| **`code-review-skill`** | `/code-review-skill` | Bộ hướng dẫn review đa hệ sinh thái (React 19, TS, Spring Boot, Go, Python) từ awesome-skills. |
 | **`agy-customizations`** | `/agy-customizations` | Hướng dẫn mở rộng và cấu hình thêm Skills, Rules, Plugins, MCP Servers cho Antigravity. |
 | **`antigravity-guide`** | `/antigravity-guide` | Cẩm nang tra cứu toàn diện về Antigravity CLI, IDE, Slash commands và Keybindings. |
 
@@ -141,6 +149,23 @@
 #### 💡 Câu lệnh mẫu (Prompt Examples):
 ```bash
 /create-design-md tạo file DESIGN.md tổng hợp từ tài liệu Figma figma-design.md
+```
+
+---
+
+### 🟢 8. Skill `open-code-review` (Alibaba Hybrid AI Code Review & Vulnerability Audit)
+- **Đường dẫn file:** [`.agents/skills/open-code-review/SKILL.md`](file:///d:/AI-Calorie-Meal-Tracker/.agents/skills/open-code-review/SKILL.md)
+- **Khi nào nên dùng:** Khi muốn rà soát code toàn diện theo kiến trúc Hybrid của Alibaba (`open-code-review` / `ocr`), kiểm tra rò rỉ NPE, lỗi Concurrency, lỗ hổng SQLi, IDOR, Resource Leaks và N+1 queries trước khi tạo Pull Request hoặc merge code.
+
+#### 💡 Câu lệnh mẫu (Prompt Examples):
+```bash
+/open-code-review review toàn bộ các thay đổi chưa commit trong workspace
+```
+```bash
+/open-code-review audit bảo mật và null safety cho thư mục backend/
+```
+```bash
+/ocr review commit HEAD~1
 ```
 
 ---

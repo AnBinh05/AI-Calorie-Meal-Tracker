@@ -49,6 +49,9 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Meal> meals;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<FavoriteMeal> favoriteMeals;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

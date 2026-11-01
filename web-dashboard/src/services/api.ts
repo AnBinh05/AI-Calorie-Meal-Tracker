@@ -1,7 +1,21 @@
 import axios from 'axios';
-import { ApiResponse, DailySummary, DateRangeSummary, HealthProfile, Meal, User } from '../types';
+import {
+  ApiResponse,
+  CreateFavoriteMealRequest,
+  CreateMealRequest,
+  DailySummary,
+  DateRangeSummary,
+  FavoriteMeal,
+  HealthProfile,
+  Meal,
+  MealAnalysisResponse,
+  MealType,
+  PageResponse,
+  QuickLogMealRequest,
+  User,
+} from '../types';
 
-export const BASE_API_URL = 'http://localhost:8080/api/v1';
+export const BASE_API_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080/api/v1';
 
 const apiClient = axios.create({
   baseURL: BASE_API_URL,
@@ -46,7 +60,26 @@ export const api = {
     return res.data;
   },
 
-  // Meals
+  // Meals & AI Analysis
+  async analyzeMealImage(file: File): Promise<ApiResponse<MealAnalysisResponse>> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('ai_calorie_token');
+    const res = await axios.post<ApiResponse<MealAnalysisResponse>>(`${BASE_API_URL}/meals/analyze`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+    return res.data;
+  },
+
+  async createMeal(mealData: CreateMealRequest): Promise<ApiResponse<Meal>> {
+    const res = await apiClient.post<ApiResponse<Meal>>('/meals', mealData);
+    return res.data;
+  },
+
   async getDailyMeals(dateStr?: string) {
     const res = await apiClient.get<ApiResponse<Meal[]>>('/meals/daily', {
       params: { date: dateStr },
@@ -85,12 +118,62 @@ export const api = {
       },
     });
 
+    let filename = `meal_report_${startDate || 'start'}_to_${endDate || 'end'}.${format}`;
+    const disposition = response.headers['content-disposition'];
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) {
+        filename = match[1];
+      }
+    }
+
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `meal_nutrition_report.${format}`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+  },
+
+  // Favorite Meals (Món ăn yêu thích)
+  async getFavoriteMeals(params?: { keyword?: string; mealType?: MealType; page?: number; size?: number }) {
+    const res = await apiClient.get<ApiResponse<PageResponse<FavoriteMeal>>>('/meals/favorites', {
+      params,
+    });
+    return res.data;
+  },
+
+  async getFavoriteMealById(id: number) {
+    const res = await apiClient.get<ApiResponse<FavoriteMeal>>(`/meals/favorites/${id}`);
+    return res.data;
+  },
+
+  async createFavoriteMeal(payload: CreateFavoriteMealRequest) {
+    const res = await apiClient.post<ApiResponse<FavoriteMeal>>('/meals/favorites', payload);
+    return res.data;
+  },
+
+  async createFavoriteFromMeal(mealId: number, customName?: string) {
+    const res = await apiClient.post<ApiResponse<FavoriteMeal>>(`/meals/favorites/from-meal/${mealId}`, null, {
+      params: { customName },
+    });
+    return res.data;
+  },
+
+  async updateFavoriteMeal(id: number, payload: Partial<CreateFavoriteMealRequest>) {
+    const res = await apiClient.put<ApiResponse<FavoriteMeal>>(`/meals/favorites/${id}`, payload);
+    return res.data;
+  },
+
+  async deleteFavoriteMeal(id: number) {
+    const res = await apiClient.delete<ApiResponse<null>>(`/meals/favorites/${id}`);
+    return res.data;
+  },
+
+  async quickLogFavoriteMeal(id: number, payload?: QuickLogMealRequest) {
+    const res = await apiClient.post<ApiResponse<Meal>>(`/meals/favorites/${id}/log`, payload || {});
+    return res.data;
   },
 };

@@ -64,7 +64,7 @@ Việc ghi chép nhật ký ăn uống thủ công thường tốn nhiều thờ
 ```mermaid
 flowchart LR
     A[🔑 Register / Login] --> B[📸 Chụp ảnh bữa ăn]
-    B --> C[⚙️ Nén & Upload S3]
+    B --> C[⚙️ Nén & Upload Supabase]
     C --> D[🤖 Phân tích Gemini Vision]
     D --> E[✏️ Xác nhận & Chỉnh sửa]
     E --> F[💾 Lưu Nhật ký Dinh dưỡng]
@@ -90,14 +90,14 @@ graph TD
 
     subgraph External & Storage Services
         Gemini["🤖 Google Gemini Flash Vision API<br/>(Image Nutrition Analysis)"]
-        S3["☁️ Amazon S3 Bucket<br/>(Secure Image Storage)"]
+        Supabase["⚡ Supabase Storage<br/>(Public CDN Image Bucket)"]
         DB[("🗄️ PostgreSQL Database<br/>(Users, Meals, Nutrition Data)")]
     end
 
     Mobile -->|"HTTP/REST + JWT"| API
     Web -->|"HTTP/REST + JWT"| API
 
-    API -->|"Upload Meal Images"| S3
+    API -->|"Upload Meal Images"| Supabase
     API -->|"Vision Prompt & Image"| Gemini
     API -->|"CRUD Operations"| DB
 ```
@@ -110,14 +110,14 @@ sequenceDiagram
     actor User as 👤 Người dùng
     participant App as 📱 Mobile App (Expo)
     participant Server as ☕ Spring Boot API
-    participant S3 as ☁️ AWS S3
+    participant Supabase as ⚡ Supabase Storage
     participant AI as 🤖 Gemini Vision API
     participant DB as 🗄️ PostgreSQL
 
     User->>App: Chụp / Chọn ảnh bữa ăn
     App->>App: Resize & Compress ảnh (Client-side)
     App->>Server: POST /api/v1/meals/analyze (Multipart Image)
-    Server->>S3: Lưu trữ ảnh bữa ăn & lấy URL
+    Server->>Supabase: Lưu trữ ảnh bữa ăn & lấy Public CDN URL
     Server->>AI: Gửi Image Buffer kèm Nutrition Analysis Prompt
     AI-->>Server: Trả về JSON (Foods, Calories, Macros, Health Tip)
     Server-->>App: Trả về kết quả phân tích AI (Draft Result)
@@ -138,7 +138,7 @@ sequenceDiagram
 | **Security & Auth** | Spring Security 6, **JWT**, OAuth2 Client | Xác thực tài khoản, phân quyền và bảo mật API |
 | **Database** | **PostgreSQL**, Spring Data JPA, Hibernate | Quản lý dữ liệu quan hệ người dùng, bữa ăn, thống kê |
 | **AI Vision Engine** | **Google Gemini Flash Vision API** | Phân tích thị giác máy tính, bóc tách món ăn và ước lượng calories |
-| **Cloud Storage** | **AWS S3** / Cloudflare R2 | Lưu trữ hình ảnh món ăn bảo mật, CDN phân phối ảnh nhanh |
+| **Cloud Storage** | **Supabase Storage** (với local fallback) | Lưu trữ hình ảnh món ăn bảo mật, CDN phân phối ảnh nhanh |
 | **Mobile App** | **React Native**, **Expo**, Axios, React Navigation | Ứng dụng di động trên iOS & Android |
 | **Web Dashboard** | **React**, **Vite**, Tailwind CSS, Chart.js / Recharts | Giao diện quản trị, xem biểu đồ dinh dưỡng & xuất báo cáo |
 | **Export Engine** | iText / OpenPDF, Apache Commons CSV | Tạo file báo cáo dinh dưỡng PDF / CSV |
@@ -204,30 +204,19 @@ AI-Calorie-Meal-Tracker/
    cd AI-Calorie-Meal-Tracker/backend
    ```
 
-2. **Cấu hình biến môi trường (`application.yml` hoặc file `.env`):**
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:postgresql://localhost:5432/calorie_tracker_db
-       username: postgres
-       password: your_password
-     jpa:
-       hibernate:
-         ddl-auto: update
-
-   jwt:
-     secret: your_jwt_super_secret_key_here
-     expiration-ms: 86400000
-
-   gemini:
-     api-key: your_gemini_flash_api_key
-
-   aws:
-     s3:
-       bucket-name: your-s3-bucket-name
-       access-key: your_aws_access_key
-       secret-key: your_aws_secret_key
-       region: ap-southeast-1
+2. **Cấu hình biến môi trường qua file `.env` (An toàn, không bị commit vào Git):**
+   ```bash
+   # Tạo file .env từ mẫu .env.example
+   cp .env.example .env
+   ```
+   Sau đó mở file `.env` và cập nhật các thông số của bạn:
+   ```bash
+   SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/calorie_tracker_db
+   SPRING_DATASOURCE_USERNAME=postgres
+   SPRING_DATASOURCE_PASSWORD=your_password
+   JWT_SECRET=your_base64_encoded_256bit_secret_key
+   GEMINI_API_KEY=your_gemini_flash_api_key
+   AWS_S3_ENABLED=false
    ```
 
 3. **Chạy ứng dụng Backend:**

@@ -5,9 +5,10 @@ import { AiScanDropzone } from '../components/AiScanDropzone';
 import { AiMealReviewModal } from '../components/AiMealReviewModal';
 import { WeeklyCalorieMiniChart } from '../components/WeeklyCalorieMiniChart';
 import { MacroBadge } from '../components/MacroBadge';
+import { FavoriteMealsQuickWidget } from '../components/FavoriteMealsQuickWidget';
 import { api } from '../services/api';
-import { DailySummary, Meal, MealType } from '../types';
-import { Sparkles, Utensils, Plus, Trash2, Calendar } from 'lucide-react';
+import { DailySummary, MealType, MealAnalysisResponse, CreateMealRequest, MealItem } from '../types';
+import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart } from 'lucide-react';
 
 interface MealCategoryConfig {
   type: MealType;
@@ -24,10 +25,17 @@ const MEAL_CATEGORIES: MealCategoryConfig[] = [
   { type: 'SNACK', title: 'Bữa phụ / Ăn vặt', icon: '🍎', badgeClass: 'badge-snack', defaultTime: '15:30' },
 ];
 
-export const DashboardPage: React.FC = () => {
+interface DashboardPageProps {
+  onNavigateToFavorites?: () => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavorites }) => {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSavingMeal, setIsSavingMeal] = useState(false);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<MealAnalysisResponse | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState<string>('');
   const [targetMealTypeForScan, setTargetMealTypeForScan] = useState<MealType>('LUNCH');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,13 +123,29 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleImageSelected = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImagePreview(reader.result as string);
-      setIsAiModalOpen(true);
-    };
-    reader.readAsDataURL(file);
+  const handleImageSelected = async (file: File) => {
+    const localUrl = URL.createObjectURL(file);
+    setSelectedImagePreview(localUrl);
+    setIsAnalyzing(true);
+
+    try {
+      const res = await api.analyzeMealImage(file);
+      if (res.success && res.data) {
+        setAiAnalysisResult(res.data);
+        if (res.data.imageUrl) {
+          setSelectedImagePreview(res.data.imageUrl);
+        }
+        setIsAiModalOpen(true);
+      } else {
+        alert(res.message || 'Không thể phân tích ảnh món ăn');
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi phân tích ảnh AI:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Lỗi kết nối máy chủ AI';
+      alert('Lỗi phân tích AI: ' + errMsg);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleQuickAddClick = (mealType: MealType) => {
@@ -140,64 +164,91 @@ export const DashboardPage: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSaveMealFromAi = (mealData: any) => {
-    if (!summary) return;
+  const handleSaveMealFromAi = async (mealData: {
+    name: string;
+    healthTip?: string;
+    items: MealItem[];
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFat: number;
+  }) => {
+    try {
+      setIsSavingMeal(true);
+      const payload: CreateMealRequest = {
+        mealDate: new Date().toISOString().split('T')[0],
+        mealType: targetMealTypeForScan,
+        name: mealData.name,
+        imageUrl: aiAnalysisResult?.imageUrl || selectedImagePreview,
+        healthTip: mealData.healthTip || aiAnalysisResult?.healthTip,
+        items: mealData.items.map((item) => ({
+          name: item.name,
+          estimatedWeightGrams: item.estimatedWeightGrams,
+          servingSize: item.servingSize || '1 phần',
+          calories: item.calories,
+          protein: item.protein || 0,
+          carbs: item.carbs || 0,
+          fat: item.fat || 0,
+          fiber: item.fiber || 0,
+        })),
+      };
 
-    const targetTypeConfig = MEAL_CATEGORIES.find(c => c.type === targetMealTypeForScan) || MEAL_CATEGORIES[1];
-
-    const newMeal: Meal = {
-      id: Date.now(),
-      mealDate: new Date().toISOString().split('T')[0],
-      name: mealData.name,
-      mealType: targetMealTypeForScan,
-      mealTypeDisplayName: `${targetTypeConfig.title} (AI Scan)`,
-      totalCalories: mealData.totalCalories,
-      totalProtein: mealData.totalProtein,
-      totalCarbs: mealData.totalCarbs,
-      totalFat: mealData.totalFat,
-      healthTip: 'Món ăn do AI phân tích tự động đã được lưu thành công vào nhật ký.',
-      items: mealData.items.map((item: any) => ({
-        id: parseInt(item.id) || Date.now(),
-        name: item.name,
-        estimatedWeightGrams: item.grams,
-        calories: Math.round((item.grams * item.caloriesPer100g) / 100),
-        protein: Math.round((item.grams * item.proteinPer100g) / 100),
-        carbs: Math.round((item.grams * item.carbsPer100g) / 100),
-        fat: Math.round((item.grams * item.fatPer100g) / 100),
-      })),
-    };
-
-    const updatedCalories = summary.totalCaloriesConsumed + mealData.totalCalories;
-    setSummary({
-      ...summary,
-      totalCaloriesConsumed: updatedCalories,
-      remainingCalories: Math.max(summary.calorieTarget - updatedCalories, 0),
-      totalProteinConsumed: summary.totalProteinConsumed + mealData.totalProtein,
-      totalCarbsConsumed: summary.totalCarbsConsumed + mealData.totalCarbs,
-      totalFatConsumed: summary.totalFatConsumed + mealData.totalFat,
-      mealCount: summary.mealCount + 1,
-      meals: [newMeal, ...summary.meals],
-    });
+      const res = await api.createMeal(payload);
+      if (res.success) {
+        setIsAiModalOpen(false);
+        // Tải lại dữ liệu tổng quan thật từ CSDL backend
+        await fetchDashboardData();
+      } else {
+        alert(res.message || 'Không thể lưu bữa ăn');
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi lưu bữa ăn:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Lỗi lưu bữa ăn';
+      alert('Không thể lưu bữa ăn: ' + errMsg);
+    } finally {
+      setIsSavingMeal(false);
+    }
   };
 
-  const handleDeleteMeal = (mealId?: number) => {
+  const handleDeleteMeal = async (mealId?: number) => {
     if (!summary || !mealId) return;
-    const mealToDelete = summary.meals.find(m => m.id === mealId);
-    if (!mealToDelete) return;
+    if (confirm('Bạn có chắc chắn muốn xóa bữa ăn này khỏi nhật ký?')) {
+      try {
+        await api.deleteMeal(mealId);
+        await fetchDashboardData();
+      } catch (err: any) {
+        console.error('Lỗi khi xóa bữa ăn:', err);
+        // Fallback cập nhật state nếu là dữ liệu mock
+        const mealToDelete = summary.meals.find((m) => m.id === mealId);
+        if (!mealToDelete) return;
 
-    const updatedMeals = summary.meals.filter(m => m.id !== mealId);
-    const updatedCalories = Math.max(summary.totalCaloriesConsumed - mealToDelete.totalCalories, 0);
+        const updatedMeals = summary.meals.filter((m) => m.id !== mealId);
+        const updatedCalories = Math.max(summary.totalCaloriesConsumed - mealToDelete.totalCalories, 0);
 
-    setSummary({
-      ...summary,
-      totalCaloriesConsumed: updatedCalories,
-      remainingCalories: Math.max(summary.calorieTarget - updatedCalories, 0),
-      totalProteinConsumed: Math.max(summary.totalProteinConsumed - mealToDelete.totalProtein, 0),
-      totalCarbsConsumed: Math.max(summary.totalCarbsConsumed - mealToDelete.totalCarbs, 0),
-      totalFatConsumed: Math.max(summary.totalFatConsumed - mealToDelete.totalFat, 0),
-      mealCount: Math.max(summary.mealCount - 1, 0),
-      meals: updatedMeals,
-    });
+        setSummary({
+          ...summary,
+          totalCaloriesConsumed: updatedCalories,
+          remainingCalories: Math.max(summary.calorieTarget - updatedCalories, 0),
+          totalProteinConsumed: Math.max(summary.totalProteinConsumed - mealToDelete.totalProtein, 0),
+          totalCarbsConsumed: Math.max(summary.totalCarbsConsumed - mealToDelete.totalCarbs, 0),
+          totalFatConsumed: Math.max(summary.totalFatConsumed - mealToDelete.totalFat, 0),
+          mealCount: Math.max(summary.mealCount - 1, 0),
+          meals: updatedMeals,
+        });
+      }
+    }
+  };
+
+  const handleBookmarkFavorite = async (mealId?: number, mealName?: string) => {
+    if (!mealId) return;
+    try {
+      const res = await api.createFavoriteFromMeal(mealId, mealName);
+      if (res.success) {
+        alert(`Đã lưu "${mealName || 'Bữa ăn'}" vào danh sách món yêu thích!`);
+      }
+    } catch (err: any) {
+      alert('Không thể lưu vào yêu thích: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const calorieTarget = summary?.calorieTarget || 2000;
@@ -420,7 +471,33 @@ export const DashboardPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleBookmarkFavorite(meal.id, meal.name)}
+                                  className="btn-icon"
+                                  title="Lưu thành món ăn yêu thích"
+                                  aria-label={`Lưu món "${meal.name}" vào danh sách yêu thích`}
+                                  style={{
+                                    padding: '6px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--color-text-muted)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'color 150ms ease, background-color 150ms ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = '#ec4899';
+                                    e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  <Heart size={16} />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteMeal(meal.id)}
@@ -552,8 +629,15 @@ export const DashboardPage: React.FC = () => {
                 </div>
                 <AiScanDropzone
                   onImageSelected={handleImageSelected}
+                  isLoading={isAnalyzing}
                 />
               </div>
+
+              {/* Quick Log Favorite Meals Widget */}
+              <FavoriteMealsQuickWidget
+                onMealLogged={fetchDashboardData}
+                onNavigateToFavorites={onNavigateToFavorites}
+              />
 
               {/* Weekly Calorie Mini Bar Chart (US-002) */}
               <WeeklyCalorieMiniChart
@@ -590,7 +674,11 @@ export const DashboardPage: React.FC = () => {
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         imagePreviewUrl={selectedImagePreview}
+        initialMealName={aiAnalysisResult?.suggestedMealName}
+        initialItems={aiAnalysisResult?.recognizedItems}
+        healthTip={aiAnalysisResult?.healthTip}
         onSaveMeal={handleSaveMealFromAi}
+        isSaving={isSavingMeal}
       />
     </div>
   );
