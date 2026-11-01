@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import { MealItem } from '../types';
 
 interface AddMealItemModalProps {
@@ -55,8 +55,8 @@ export const AddMealItemModal: React.FC<AddMealItemModalProps> = ({ visible, onC
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleReset}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <Pressable style={styles.modalOverlay} onPress={handleReset}>
+        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>Thêm món ăn bổ sung</Text>
           <Text style={styles.modalSubtitle}>Nhập thông tin món ăn vào danh sách bữa ăn</Text>
 
@@ -99,7 +99,7 @@ export const AddMealItemModal: React.FC<AddMealItemModalProps> = ({ visible, onC
 
           <View style={styles.rowInputs}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={[styles.inputLabel, { color: '#38bdf8' }]}>Protein (g)</Text>
+              <Text style={[styles.inputLabel, { color: '#60A5FA' }]}>Protein (g)</Text>
               <TextInput
                 style={styles.textInput}
                 value={protein}
@@ -110,7 +110,7 @@ export const AddMealItemModal: React.FC<AddMealItemModalProps> = ({ visible, onC
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={[styles.inputLabel, { color: '#facc15' }]}>Carbs (g)</Text>
+              <Text style={[styles.inputLabel, { color: '#FBBF24' }]}>Carbs (g)</Text>
               <TextInput
                 style={styles.textInput}
                 value={carbs}
@@ -121,7 +121,7 @@ export const AddMealItemModal: React.FC<AddMealItemModalProps> = ({ visible, onC
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={[styles.inputLabel, { color: '#f43f5e' }]}>Fat (g)</Text>
+              <Text style={[styles.inputLabel, { color: '#F472B6' }]}>Fat (g)</Text>
               <TextInput
                 style={styles.textInput}
                 value={fat}
@@ -141,8 +141,8 @@ export const AddMealItemModal: React.FC<AddMealItemModalProps> = ({ visible, onC
               <Text style={styles.confirmText}>Thêm món</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };

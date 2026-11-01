@@ -46,7 +46,7 @@ Controller ──> Service ──> Repository ──> Entity
 ### 4. AI Vision Pipeline (`GeminiVisionService`)
 - Image input: `MultipartFile` uploaded from Mobile/Web.
 - Always validate image MIME type (`image/jpeg`, `image/png`, `image/webp`) and size (max 5MB).
-- Upload raw image to AWS S3 / Cloudflare R2 bucket first to obtain public/pre-signed URL.
+- Upload raw image to Supabase Storage bucket (or local storage fallback) to obtain public CDN URL.
 - Send prompt to **Gemini Flash Vision** requesting structured JSON matching `MealAnalysisResponse` DTO:
   ```json
   {

@@ -40,11 +40,10 @@ services:
       HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       JWT_SECRET: ${JWT_SECRET:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      AWS_S3_ENABLED: ${AWS_S3_ENABLED:-false}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-calorie-tracker-meals}
-      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SUPABASE_STORAGE_ENABLED: ${SUPABASE_STORAGE_ENABLED:-false}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-meals}
     volumes:
       - backend_uploads:/app/uploads
 

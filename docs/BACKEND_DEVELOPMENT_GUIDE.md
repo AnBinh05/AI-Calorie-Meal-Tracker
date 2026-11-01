@@ -87,8 +87,11 @@ JWT_SECRET=your_base64_encoded_256bit_secret_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-1.5-flash
 
-# Lưu trữ ảnh (AWS S3 hoặc fallback Local Storage)
-AWS_S3_ENABLED=false
+# Lưu trữ ảnh (Supabase Storage hoặc fallback Local Storage)
+SUPABASE_STORAGE_ENABLED=false
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_KEY=your_supabase_service_role_key_or_anon_key
+SUPABASE_STORAGE_BUCKET=meals
 LOCAL_STORAGE_DIR=./uploads
 ```
 

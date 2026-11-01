@@ -14,9 +14,9 @@ Follow these guidelines strictly to ensure code quality, architectural consisten
 
 ```text
 AI-Calorie-Meal-Tracker/
-├── backend/                  # Spring Boot 3.2.5 REST API (Java 17, JPA, PostgreSQL, S3, Gemini)
+├── backend/                  # Spring Boot 3.2.5 REST API (Java 17, JPA, PostgreSQL, Supabase Storage, Gemini)
 │   ├── src/main/java/com/calorie/tracker/
-│   │   ├── config/           # Security (JWT, OAuth2), S3, Gemini Flash Vision configs
+│   │   ├── config/           # Security (JWT, OAuth2), Supabase, Gemini Flash Vision configs
 │   │   ├── controller/       # REST endpoints (/api/v1/...)
 │   │   ├── dto/              # Request / Response DTOs
 │   │   ├── entity/           # JPA Entities (User, Meal, MealItem, HealthProfile)
@@ -130,7 +130,7 @@ This repository contains specialized skill guides in [`.agents/skills/`](file://
 | **`fixing-motion-performance`** | `/fixing-motion-performance` | Optimizing animations to 60fps (compositor properties `transform`, `opacity`, `prefers-reduced-motion`). |
 | **`fixing-metadata`** | `/fixing-metadata` | Optimizing SEO, Open Graph tags, social previews, and page metadata. |
 | **`create-design-md`** | `/create-design-md` | Extracting and synchronizing Figma design specifications into `DESIGN.md`. |
-| **`backend-developer`** | `/backend-developer` | Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Flash Vision & AWS S3. |
+| **`backend-developer`** | `/backend-developer` | Spring Boot 3, Java 17, JPA, PostgreSQL, Gemini Flash Vision & Supabase Storage. |
 | **`mobile-developer`** | `/mobile-developer` | React Native (Expo SDK 51), Camera flow, client image compression, Diary. |
 | **`api-designer`** | `/api-designer` | RESTful API contract modeling, DTO schemas, and OpenAPI/Swagger specs. |
 | **`code-reviewer`** | `/code-reviewer` | PR-style fullstack code reviews, anti-AI slop audit, and regression prevention. |

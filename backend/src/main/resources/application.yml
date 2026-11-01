@@ -38,13 +38,12 @@ gemini:
   model: ${GEMINI_MODEL:gemini-1.5-flash}
   api-url: https://generativelanguage.googleapis.com/v1beta/models
 
-aws:
-  s3:
-    bucket-name: ${AWS_S3_BUCKET:calorie-tracker-meals}
-    region: ${AWS_REGION:ap-southeast-1}
-    access-key: ${AWS_ACCESS_KEY_ID:}
-    secret-key: ${AWS_SECRET_ACCESS_KEY:}
-    enabled: ${AWS_S3_ENABLED:false}
+supabase:
+  url: ${SUPABASE_URL:}
+  key: ${SUPABASE_KEY:${SUPABASE_SERVICE_ROLE_KEY:}}
+  bucket-name: ${SUPABASE_STORAGE_BUCKET:meals}
+  storage:
+    enabled: ${SUPABASE_STORAGE_ENABLED:false}
 
 storage:
   local-dir: ${LOCAL_STORAGE_DIR:./uploads}
