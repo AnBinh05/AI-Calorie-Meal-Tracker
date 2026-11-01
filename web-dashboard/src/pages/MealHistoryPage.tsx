@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Meal } from '../types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Heart } from 'lucide-react';
 
 export const MealHistoryPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -34,6 +34,18 @@ export const MealHistoryPage: React.FC = () => {
       } catch (e) {
         alert('Không thể xóa bữa ăn');
       }
+    }
+  };
+
+  const handleBookmarkFavorite = async (mealId?: number, mealName?: string) => {
+    if (!mealId) return;
+    try {
+      const res = await api.createFavoriteFromMeal(mealId, mealName);
+      if (res.success) {
+        alert(`Đã lưu "${mealName || 'Bữa ăn'}" vào danh sách món yêu thích!`);
+      }
+    } catch (err: any) {
+      alert('Không thể lưu vào yêu thích: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -72,14 +84,28 @@ export const MealHistoryPage: React.FC = () => {
                   <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '6px' }}>{meal.name}</h3>
                 </div>
 
-                <button
-                  onClick={() => handleDelete(meal.id!)}
-                  className="btn btn-danger"
-                  style={{ padding: '6px 10px', borderRadius: '8px' }}
-                  title="Xóa bữa ăn"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleBookmarkFavorite(meal.id, meal.name)}
+                    className="btn btn-outline"
+                    style={{ padding: '6px 10px', borderRadius: '8px' }}
+                    title="Lưu thành món yêu thích"
+                    aria-label={`Lưu "${meal.name}" vào danh sách món yêu thích`}
+                  >
+                    <Heart size={14} color="#ec4899" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(meal.id!)}
+                    className="btn btn-danger"
+                    style={{ padding: '6px 10px', borderRadius: '8px' }}
+                    title="Xóa bữa ăn"
+                    aria-label={`Xóa bữa ăn ${meal.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               {meal.imageUrl && (

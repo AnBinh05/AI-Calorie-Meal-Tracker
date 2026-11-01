@@ -133,3 +133,52 @@ export interface CreateMealRequest {
   }[];
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface FavoriteMeal {
+  id: number;
+  name: string;
+  mealType: MealType;
+  mealTypeDisplayName?: string;
+  imageUrl?: string;
+  notes?: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  usageCount: number;
+  itemsCount: number;
+  items: MealItem[];
+  createdAt: string;
+}
+
+export interface CreateFavoriteMealRequest {
+  name: string;
+  mealType: MealType;
+  imageUrl?: string;
+  notes?: string;
+  items: {
+    name: string;
+    estimatedWeightGrams?: number;
+    servingSize?: string;
+    calories: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+  }[];
+}
+
+export interface QuickLogMealRequest {
+  mealDate?: string;
+  mealType?: MealType;
+  notes?: string;
+}
+

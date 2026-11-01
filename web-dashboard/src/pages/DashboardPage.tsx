@@ -5,9 +5,10 @@ import { AiScanDropzone } from '../components/AiScanDropzone';
 import { AiMealReviewModal } from '../components/AiMealReviewModal';
 import { WeeklyCalorieMiniChart } from '../components/WeeklyCalorieMiniChart';
 import { MacroBadge } from '../components/MacroBadge';
+import { FavoriteMealsQuickWidget } from '../components/FavoriteMealsQuickWidget';
 import { api } from '../services/api';
 import { DailySummary, MealType, MealAnalysisResponse, CreateMealRequest, MealItem } from '../types';
-import { Sparkles, Utensils, Plus, Trash2, Calendar } from 'lucide-react';
+import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart } from 'lucide-react';
 
 interface MealCategoryConfig {
   type: MealType;
@@ -24,7 +25,11 @@ const MEAL_CATEGORIES: MealCategoryConfig[] = [
   { type: 'SNACK', title: 'Bữa phụ / Ăn vặt', icon: '🍎', badgeClass: 'badge-snack', defaultTime: '15:30' },
 ];
 
-export const DashboardPage: React.FC = () => {
+interface DashboardPageProps {
+  onNavigateToFavorites?: () => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavorites }) => {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -231,6 +236,18 @@ export const DashboardPage: React.FC = () => {
           meals: updatedMeals,
         });
       }
+    }
+  };
+
+  const handleBookmarkFavorite = async (mealId?: number, mealName?: string) => {
+    if (!mealId) return;
+    try {
+      const res = await api.createFavoriteFromMeal(mealId, mealName);
+      if (res.success) {
+        alert(`Đã lưu "${mealName || 'Bữa ăn'}" vào danh sách món yêu thích!`);
+      }
+    } catch (err: any) {
+      alert('Không thể lưu vào yêu thích: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -454,7 +471,33 @@ export const DashboardPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleBookmarkFavorite(meal.id, meal.name)}
+                                  className="btn-icon"
+                                  title="Lưu thành món ăn yêu thích"
+                                  aria-label={`Lưu món "${meal.name}" vào danh sách yêu thích`}
+                                  style={{
+                                    padding: '6px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--color-text-muted)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'color 150ms ease, background-color 150ms ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = '#ec4899';
+                                    e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = 'var(--color-text-muted)';
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  <Heart size={16} />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteMeal(meal.id)}
@@ -589,6 +632,12 @@ export const DashboardPage: React.FC = () => {
                   isLoading={isAnalyzing}
                 />
               </div>
+
+              {/* Quick Log Favorite Meals Widget */}
+              <FavoriteMealsQuickWidget
+                onMealLogged={fetchDashboardData}
+                onNavigateToFavorites={onNavigateToFavorites}
+              />
 
               {/* Weekly Calorie Mini Bar Chart (US-002) */}
               <WeeklyCalorieMiniChart

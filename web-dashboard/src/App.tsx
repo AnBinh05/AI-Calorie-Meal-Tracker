@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { ExportModal } from './components/ExportModal';
 
 import { DashboardPage } from './pages/DashboardPage';
+import { FavoriteMealsPage } from './pages/FavoriteMealsPage';
 import { MealHistoryPage } from './pages/MealHistoryPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -38,6 +39,8 @@ export function App() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'favorites':
+        return <FavoriteMealsPage />;
       case 'history':
         return <MealHistoryPage />;
       case 'analytics':
@@ -46,7 +49,7 @@ export function App() {
         return <ProfilePage />;
       case 'dashboard':
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigateToFavorites={() => setActiveTab('favorites')} />;
     }
   };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, History, LineChart, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, History, LineChart, User, LogOut, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
 
   const navItems = [
     { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+    { id: 'favorites', label: 'Món yêu thích', icon: Heart },
     { id: 'history', label: 'Lịch sử bữa ăn', icon: History },
     { id: 'analytics', label: 'Phân tích & Xu hướng', icon: LineChart },
     { id: 'profile', label: 'Hồ sơ & BMR/TDEE', icon: User },

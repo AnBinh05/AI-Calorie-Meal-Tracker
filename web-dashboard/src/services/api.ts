@@ -1,5 +1,19 @@
 import axios from 'axios';
-import { ApiResponse, CreateMealRequest, DailySummary, DateRangeSummary, HealthProfile, Meal, MealAnalysisResponse, User } from '../types';
+import {
+  ApiResponse,
+  CreateFavoriteMealRequest,
+  CreateMealRequest,
+  DailySummary,
+  DateRangeSummary,
+  FavoriteMeal,
+  HealthProfile,
+  Meal,
+  MealAnalysisResponse,
+  MealType,
+  PageResponse,
+  QuickLogMealRequest,
+  User,
+} from '../types';
 
 export const BASE_API_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080/api/v1';
 
@@ -121,5 +135,45 @@ export const api = {
     link.click();
     link.remove();
     setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+  },
+
+  // Favorite Meals (Món ăn yêu thích)
+  async getFavoriteMeals(params?: { keyword?: string; mealType?: MealType; page?: number; size?: number }) {
+    const res = await apiClient.get<ApiResponse<PageResponse<FavoriteMeal>>>('/meals/favorites', {
+      params,
+    });
+    return res.data;
+  },
+
+  async getFavoriteMealById(id: number) {
+    const res = await apiClient.get<ApiResponse<FavoriteMeal>>(`/meals/favorites/${id}`);
+    return res.data;
+  },
+
+  async createFavoriteMeal(payload: CreateFavoriteMealRequest) {
+    const res = await apiClient.post<ApiResponse<FavoriteMeal>>('/meals/favorites', payload);
+    return res.data;
+  },
+
+  async createFavoriteFromMeal(mealId: number, customName?: string) {
+    const res = await apiClient.post<ApiResponse<FavoriteMeal>>(`/meals/favorites/from-meal/${mealId}`, null, {
+      params: { customName },
+    });
+    return res.data;
+  },
+
+  async updateFavoriteMeal(id: number, payload: Partial<CreateFavoriteMealRequest>) {
+    const res = await apiClient.put<ApiResponse<FavoriteMeal>>(`/meals/favorites/${id}`, payload);
+    return res.data;
+  },
+
+  async deleteFavoriteMeal(id: number) {
+    const res = await apiClient.delete<ApiResponse<null>>(`/meals/favorites/${id}`);
+    return res.data;
+  },
+
+  async quickLogFavoriteMeal(id: number, payload?: QuickLogMealRequest) {
+    const res = await apiClient.post<ApiResponse<Meal>>(`/meals/favorites/${id}/log`, payload || {});
+    return res.data;
   },
 };
