@@ -100,3 +100,36 @@ export interface ApiResponse<T> {
   data: T;
   timestamp: string;
 }
+
+export interface MealAnalysisResponse {
+  suggestedMealName?: string;
+  imageUrl?: string;
+  estimatedTotalCalories?: number;
+  estimatedTotalProtein?: number;
+  estimatedTotalCarbs?: number;
+  estimatedTotalFat?: number;
+  healthTip?: string;
+  recognizedItems: MealItem[];
+  rawAiResponse?: string;
+}
+
+export interface CreateMealRequest {
+  mealDate: string;
+  mealType: MealType;
+  name?: string;
+  imageUrl?: string;
+  healthTip?: string;
+  notes?: string;
+  items: {
+    name: string;
+    estimatedWeightGrams?: number;
+    servingSize?: string;
+    calories: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+    confidenceScore?: number;
+  }[];
+}
+

@@ -1,42 +1,108 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Plus, Minus, Check } from 'lucide-react';
+import { X, Sparkles, Plus, Minus, Check, Trash2 } from 'lucide-react';
 import { MacroBadge } from './MacroBadge';
+import { MealItem } from '../types';
 
-export interface RecognizedItem {
+export interface ReviewItemState {
   id: string;
   name: string;
   grams: number;
-  caloriesPer100g: number;
-  proteinPer100g: number;
-  carbsPer100g: number;
-  fatPer100g: number;
+  initialGrams: number;
+  initialCalories: number;
+  initialProtein: number;
+  initialCarbs: number;
+  initialFat: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingSize?: string;
 }
 
 export interface AiMealReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   imagePreviewUrl?: string;
-  onSaveMeal: (mealData: any) => void;
+  initialMealName?: string;
+  initialItems?: MealItem[];
+  healthTip?: string;
+  onSaveMeal: (mealData: {
+    name: string;
+    healthTip?: string;
+    items: MealItem[];
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFat: number;
+  }) => Promise<void> | void;
+  isSaving?: boolean;
 }
 
 export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
   isOpen,
   onClose,
   imagePreviewUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80',
+  initialMealName = 'Bữa ăn phân tích AI',
+  initialItems = [],
+  healthTip = '',
   onSaveMeal,
+  isSaving = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [mealName, setMealName] = useState('Cơm tấm sườn bì chả');
-  const [items, setItems] = useState<RecognizedItem[]>([
-    { id: '1', name: 'Sườn heo nướng mật ong', grams: 150, caloriesPer100g: 240, proteinPer100g: 26, carbsPer100g: 6, fatPer100g: 13 },
-    { id: '2', name: 'Cơm tấm trắng', grams: 180, caloriesPer100g: 130, proteinPer100g: 2.7, carbsPer100g: 28, fatPer100g: 0.3 },
-    { id: '3', name: 'Chả trứng hấp', grams: 60, caloriesPer100g: 180, proteinPer100g: 12, carbsPer100g: 4, fatPer100g: 13 },
-    { id: '4', name: 'Bì heo trộn thính', grams: 40, caloriesPer100g: 120, proteinPer100g: 15, carbsPer100g: 3, fatPer100g: 5 },
-  ]);
-  const [includeExtraOil, setIncludeExtraOil] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [mealName, setMealName] = useState(initialMealName);
+  const [items, setItems] = useState<ReviewItemState[]>([]);
+  const [includeExtraOil, setIncludeExtraOil] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [isAddingItem, setIsAddingItem] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMealName(initialMealName || 'Bữa ăn phân tích AI');
+      if (initialItems && initialItems.length > 0) {
+        setItems(
+          initialItems.map((item, idx) => {
+            const grams = item.estimatedWeightGrams || 100;
+            return {
+              id: String(item.id || idx + 1),
+              name: item.name,
+              grams: grams,
+              initialGrams: grams,
+              initialCalories: item.calories || 100,
+              initialProtein: item.protein || 0,
+              initialCarbs: item.carbs || 0,
+              initialFat: item.fat || 0,
+              calories: item.calories || 100,
+              protein: item.protein || 0,
+              carbs: item.carbs || 0,
+              fat: item.fat || 0,
+              servingSize: item.servingSize || '1 phần',
+            };
+          })
+        );
+      } else {
+        // Fallback default item
+        setItems([
+          {
+            id: '1',
+            name: 'Món ăn nhận diện',
+            grams: 150,
+            initialGrams: 150,
+            initialCalories: 250,
+            initialProtein: 15,
+            initialCarbs: 30,
+            initialFat: 8,
+            calories: 250,
+            protein: 15,
+            carbs: 30,
+            fat: 8,
+            servingSize: '1 phần',
+          },
+        ]);
+      }
+    }
+  }, [isOpen, initialMealName, initialItems]);
 
   // Keyboard accessibility: Escape key to close & Focus trap
   useEffect(() => {
@@ -53,6 +119,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
         const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
+        if (focusableElements.length === 0) return;
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -71,7 +138,6 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    // Initial focus on close button or modal
     closeButtonRef.current?.focus();
 
     return () => {
@@ -82,10 +148,10 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
   if (!isOpen) return null;
 
   // Calculate totals
-  const rawCalories = items.reduce((sum, item) => sum + (item.grams * item.caloriesPer100g) / 100, 0);
-  const rawProtein = items.reduce((sum, item) => sum + (item.grams * item.proteinPer100g) / 100, 0);
-  const rawCarbs = items.reduce((sum, item) => sum + (item.grams * item.carbsPer100g) / 100, 0);
-  const rawFat = items.reduce((sum, item) => sum + (item.grams * item.fatPer100g) / 100, 0);
+  const rawCalories = items.reduce((sum, item) => sum + item.calories, 0);
+  const rawProtein = items.reduce((sum, item) => sum + item.protein, 0);
+  const rawCarbs = items.reduce((sum, item) => sum + item.carbs, 0);
+  const rawFat = items.reduce((sum, item) => sum + item.fat, 0);
 
   const oilMultiplier = includeExtraOil ? 1.12 : 1.0;
   const totalCalories = Math.round(rawCalories * oilMultiplier);
@@ -94,27 +160,78 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
   const totalFat = Math.round(rawFat * (includeExtraOil ? 1.25 : 1.0));
 
   const handleUpdateGrams = (id: string, newGrams: number) => {
-    const clamped = Math.max(0, Math.min(newGrams, 2000));
+    const clamped = Math.max(1, Math.min(newGrams, 3000));
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, grams: clamped } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          const ratio = clamped / (item.initialGrams || 100);
+          return {
+            ...item,
+            grams: clamped,
+            calories: Math.round(item.initialCalories * ratio),
+            protein: Math.round(item.initialProtein * ratio * 10) / 10,
+            carbs: Math.round(item.initialCarbs * ratio * 10) / 10,
+            fat: Math.round(item.initialFat * ratio * 10) / 10,
+          };
+        }
+        return item;
+      })
     );
   };
 
-  const handleSave = () => {
-    setSaving(true);
-    setTimeout(() => {
-      onSaveMeal({
-        name: mealName,
-        totalCalories,
-        totalProtein,
-        totalCarbs,
-        totalFat,
-        items,
-        extraOil: includeExtraOil,
-      });
-      setSaving(false);
-      onClose();
-    }, 400);
+  const handleRemoveItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleAddNewItem = () => {
+    if (!newItemName.trim()) return;
+    const newItem: ReviewItemState = {
+      id: String(Date.now()),
+      name: newItemName.trim(),
+      grams: 100,
+      initialGrams: 100,
+      initialCalories: 150,
+      initialProtein: 5,
+      initialCarbs: 20,
+      initialFat: 5,
+      calories: 150,
+      protein: 5,
+      carbs: 20,
+      fat: 5,
+      servingSize: '1 phần',
+    };
+    setItems((prev) => [...prev, newItem]);
+    setNewItemName('');
+    setIsAddingItem(false);
+  };
+
+  const handleSave = async () => {
+    if (items.length === 0) {
+      alert('Bữa ăn phải có ít nhất 1 món thành phần');
+      return;
+    }
+
+    const payloadItems: MealItem[] = items.map((item) => ({
+      name: item.name,
+      estimatedWeightGrams: item.grams,
+      servingSize: item.servingSize || '1 phần',
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      fiber: 0,
+      confidenceScore: 1.0,
+    }));
+
+    await onSaveMeal({
+      name: mealName.trim() || 'Bữa ăn',
+      healthTip: healthTip || 'Bữa ăn đã được ghi nhận vào nhật ký dinh dưỡng.',
+      items: payloadItems,
+      totalCalories,
+      totalProtein,
+      totalCarbs,
+      totalFat,
+    });
   };
 
   return (
@@ -132,7 +249,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
         aria-labelledby="ai-review-title"
         aria-describedby="ai-review-desc"
         style={{
-          maxWidth: '820px',
+          maxWidth: '840px',
           padding: 'var(--spacing-6)',
           display: 'flex',
           flexDirection: 'column',
@@ -144,8 +261,8 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
             <div
               style={{
-                width: '32px',
-                height: '32px',
+                width: '36px',
+                height: '36px',
                 borderRadius: 'var(--radius-full)',
                 backgroundColor: 'var(--color-brand-tint)',
                 display: 'flex',
@@ -154,7 +271,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                 color: 'var(--color-brand-primary)',
               }}
             >
-              <Sparkles size={18} aria-hidden="true" />
+              <Sparkles size={20} aria-hidden="true" />
             </div>
             <div>
               <h3
@@ -165,7 +282,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                   color: 'var(--color-text-primary)',
                 }}
               >
-                Kết quả AI bóc tách món ăn
+                Kết quả Gemini AI bóc tách món ăn
               </h3>
               <p
                 id="ai-review-desc"
@@ -174,7 +291,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                   color: 'var(--color-text-secondary)',
                 }}
               >
-                Kiểm tra và tinh chỉnh số gram từng thành phần trước khi lưu vào nhật ký
+                Kiểm tra định lượng, tinh chỉnh số gram và thêm bớt thành phần trước khi lưu
               </p>
             </div>
           </div>
@@ -195,7 +312,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1.3fr',
+            gridTemplateColumns: '1fr 1.35fr',
             gap: 'var(--spacing-5)',
           }}
         >
@@ -204,7 +321,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
             <div
               style={{
                 width: '100%',
-                height: '210px',
+                height: '220px',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 backgroundColor: 'var(--color-bg-surface-subtle)',
@@ -225,12 +342,15 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                   color: '#ffffff',
                   fontSize: '11px',
                   fontWeight: 600,
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 'var(--radius-sm)',
                   backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                ✨ AI Vision 98%
+                <Sparkles size={12} color="#10b981" /> AI Verified
               </span>
             </div>
 
@@ -247,7 +367,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                  Tổng ước tính Calo
+                  Tổng Calories Bữa Ăn
                 </span>
                 <span
                   className="tabular-nums"
@@ -262,10 +382,26 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               </div>
 
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <MacroBadge type="carbs" label="Carbs" value={totalCarbs} unit="g" />
                 <MacroBadge type="protein" label="Protein" value={totalProtein} unit="g" />
+                <MacroBadge type="carbs" label="Carbs" value={totalCarbs} unit="g" />
                 <MacroBadge type="fat" label="Fat" value={totalFat} unit="g" />
               </div>
+
+              {healthTip ? (
+                <div
+                  style={{
+                    marginTop: '10px',
+                    padding: '8px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  💡 <strong style={{ color: 'var(--color-text-primary)' }}>Lời khuyên:</strong> {healthTip}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -275,12 +411,12 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               display: 'flex',
               flexDirection: 'column',
               gap: 'var(--spacing-3)',
-              maxHeight: '340px',
+              maxHeight: '380px',
               overflowY: 'auto',
               paddingRight: '4px',
             }}
           >
-            <div className="form-group" style={{ marginBottom: '8px' }}>
+            <div className="form-group" style={{ marginBottom: '4px' }}>
               <label htmlFor="meal-name-input" className="form-label">
                 Tên bữa ăn
               </label>
@@ -294,77 +430,139 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               />
             </div>
 
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 700,
-                color: 'var(--color-text-secondary)',
-                textTransform: 'uppercase',
-              }}
-            >
-              Thành phần món ăn ({items.length})
-            </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--color-text-secondary)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Món ăn thành phần ({items.length})
+              </span>
 
-            {items.map((item) => {
-              const itemCalories = Math.round((item.grams * item.caloriesPer100g) / 100);
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-bg-surface-subtle)',
-                    border: '1px solid var(--color-border-default)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                  }}
+              {!isAddingItem && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingItem(true)}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '12px', padding: '2px 8px', color: 'var(--color-brand-primary)' }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                      {item.name}
-                    </div>
-                    <div className="tabular-nums" style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                      {itemCalories} kcal • P: {Math.round((item.grams * item.proteinPer100g) / 100)}g • C: {Math.round((item.grams * item.carbsPer100g) / 100)}g
-                    </div>
+                  <Plus size={14} /> Thêm món
+                </button>
+              )}
+            </div>
+
+            {isAddingItem && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  padding: '8px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-bg-surface-subtle)',
+                  border: '1px dashed var(--color-brand-primary)',
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Nhập tên món mới (vd: Canh rau dền)"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="form-input"
+                  style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNewItem}
+                  className="btn btn-primary"
+                  style={{ padding: '4px 10px', fontSize: '12px' }}
+                >
+                  Thêm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingItem(false);
+                    setNewItemName('');
+                  }}
+                  className="btn btn-ghost"
+                  style={{ padding: '4px 8px', fontSize: '12px' }}
+                >
+                  Hủy
+                </button>
+              </div>
+            )}
+
+            {items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-bg-surface-subtle)',
+                  border: '1px solid var(--color-border-default)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                    {item.name}
                   </div>
-
-                  {/* Stepper Controls */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateGrams(item.id, item.grams - 10)}
-                      aria-label={`Giảm 10g cho món ${item.name}`}
-                      className="btn btn-outline"
-                      style={{ width: '28px', height: '28px', padding: 0 }}
-                    >
-                      <Minus size={14} aria-hidden="true" />
-                    </button>
-
-                    <input
-                      type="number"
-                      aria-label={`Khối lượng gram cho món ${item.name}`}
-                      value={item.grams}
-                      onChange={(e) => handleUpdateGrams(item.id, parseInt(e.target.value) || 0)}
-                      className="form-input tabular-nums"
-                      style={{ width: '56px', height: '28px', padding: '2px 4px', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
-                    />
-                    <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>g</span>
-
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateGrams(item.id, item.grams + 10)}
-                      aria-label={`Tăng 10g cho món ${item.name}`}
-                      className="btn btn-outline"
-                      style={{ width: '28px', height: '28px', padding: 0 }}
-                    >
-                      <Plus size={14} aria-hidden="true" />
-                    </button>
+                  <div className="tabular-nums" style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {item.calories} kcal • P: {item.protein}g • C: {item.carbs}g • F: {item.fat}g
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Stepper Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateGrams(item.id, item.grams - 10)}
+                    aria-label={`Giảm 10g cho món ${item.name}`}
+                    className="btn btn-outline"
+                    style={{ width: '28px', height: '28px', padding: 0 }}
+                  >
+                    <Minus size={14} aria-hidden="true" />
+                  </button>
+
+                  <input
+                    type="number"
+                    aria-label={`Khối lượng gram cho món ${item.name}`}
+                    value={item.grams}
+                    onChange={(e) => handleUpdateGrams(item.id, parseInt(e.target.value) || 0)}
+                    className="form-input tabular-nums"
+                    style={{ width: '56px', height: '28px', padding: '2px 4px', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>g</span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateGrams(item.id, item.grams + 10)}
+                    aria-label={`Tăng 10g cho món ${item.name}`}
+                    className="btn btn-outline"
+                    style={{ width: '28px', height: '28px', padding: 0 }}
+                  >
+                    <Plus size={14} aria-hidden="true" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveItem(item.id)}
+                    aria-label={`Xóa món ${item.name}`}
+                    className="btn btn-ghost"
+                    style={{ width: '28px', height: '28px', padding: 0, color: 'var(--color-status-danger)' }}
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ))}
 
             {/* Extra Oil Cooking Factor Checkbox */}
             <div
@@ -407,7 +605,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
             type="button"
             className="btn btn-outline"
             onClick={onClose}
-            disabled={saving}
+            disabled={isSaving}
           >
             Hủy bỏ
           </button>
@@ -416,10 +614,10 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
             type="button"
             className="btn btn-primary"
             onClick={handleSave}
-            disabled={saving}
+            disabled={isSaving || items.length === 0}
           >
             <Check size={16} aria-hidden="true" />
-            <span>{saving ? 'Đang lưu...' : '💾 Lưu vào Nhật ký bữa ăn'}</span>
+            <span>{isSaving ? 'Đang lưu vào CSDL...' : '💾 Lưu vào Nhật ký bữa ăn'}</span>
           </button>
         </div>
       </div>

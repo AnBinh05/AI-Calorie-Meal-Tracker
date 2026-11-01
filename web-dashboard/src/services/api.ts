@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { ApiResponse, DailySummary, DateRangeSummary, HealthProfile, Meal, User } from '../types';
+import { ApiResponse, CreateMealRequest, DailySummary, DateRangeSummary, HealthProfile, Meal, MealAnalysisResponse, User } from '../types';
 
-export const BASE_API_URL = 'http://localhost:8080/api/v1';
+export const BASE_API_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080/api/v1';
 
 const apiClient = axios.create({
   baseURL: BASE_API_URL,
@@ -46,7 +46,26 @@ export const api = {
     return res.data;
   },
 
-  // Meals
+  // Meals & AI Analysis
+  async analyzeMealImage(file: File): Promise<ApiResponse<MealAnalysisResponse>> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('ai_calorie_token');
+    const res = await axios.post<ApiResponse<MealAnalysisResponse>>(`${BASE_API_URL}/meals/analyze`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    });
+    return res.data;
+  },
+
+  async createMeal(mealData: CreateMealRequest): Promise<ApiResponse<Meal>> {
+    const res = await apiClient.post<ApiResponse<Meal>>('/meals', mealData);
+    return res.data;
+  },
+
   async getDailyMeals(dateStr?: string) {
     const res = await apiClient.get<ApiResponse<Meal[]>>('/meals/daily', {
       params: { date: dateStr },
