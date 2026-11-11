@@ -35,6 +35,20 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      const token = localStorage.getItem('ai_calorie_token');
+      if (token && token !== 'mock_jwt_token_demo_nutriai') {
+        localStorage.removeItem('ai_calorie_token');
+        window.dispatchEvent(new CustomEvent('nutriai:unauthorized'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const api = {
   // Auth
   async login(credentials: { email: string; password: string }) {

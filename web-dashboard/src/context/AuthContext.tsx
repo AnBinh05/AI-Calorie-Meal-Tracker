@@ -19,10 +19,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     checkAuth();
+    const handleUnauthorized = () => {
+      localStorage.removeItem('ai_calorie_token');
+      setUser(null);
+    };
+    window.addEventListener('nutriai:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('nutriai:unauthorized', handleUnauthorized);
   }, []);
 
   const checkAuth = async () => {
     const token = localStorage.getItem('ai_calorie_token');
+    if (token === 'mock_jwt_token_demo_nutriai') {
+      loginDemo();
+      setIsLoading(false);
+      return;
+    }
     if (token) {
       try {
         const res = await api.getMe();
@@ -45,13 +56,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.data.user);
         return;
       }
-    } catch (err) {
-      // If backend is offline or credentials matched demo, provide seamless demo fallback
-      if (email === 'demo@nutriai.vn' || email.includes('demo') || !email) {
+      throw new Error(res.message || 'Đăng nhập thất bại');
+    } catch (err: any) {
+      const isNetworkError = !err?.response;
+      // Chỉ dùng chế độ Demo Offline nếu backend không phản hồi khi bấm nút Dùng thử Demo
+      if (isNetworkError && email.trim().toLowerCase() === 'demo@nutriai.vn') {
         loginDemo();
         return;
       }
-      throw new Error('Không thể kết nối đến máy chủ. Bạn có thể chọn "Dùng thử tài khoản Demo" để xem giao diện.');
+      const serverMsg = err?.response?.data?.message || err?.message;
+      throw new Error(
+        serverMsg || 'Không thể kết nối đến máy chủ. Bạn có thể chọn "Dùng thử tài khoản Demo" để trải nghiệm offline.'
+      );
     }
   };
 
@@ -59,8 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const demoUser: User = {
       id: 1,
       email: 'demo@nutriai.vn',
-      fullName: 'Nguyễn An Bình',
-      role: 'USER',
+      fullName: 'Nguyễn Văn Demo',
+      role: 'ROLE_USER',
       hasHealthProfile: true,
       createdAt: new Date().toISOString(),
     };
@@ -76,9 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.data.user);
         return;
       }
-    } catch (err) {
-      // Fallback
-      loginDemo();
+      throw new Error(res.message || 'Đăng ký tài khoản thất bại');
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.message;
+      throw new Error(serverMsg || 'Không thể đăng ký tài khoản. Vui lòng kiểm tra lại thông tin.');
     }
   };
 
