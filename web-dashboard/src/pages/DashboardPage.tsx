@@ -3,12 +3,13 @@ import { StatCard } from '../components/StatCard';
 import { DailyCalorieProgressCard } from '../components/DailyCalorieProgressCard';
 import { AiScanDropzone } from '../components/AiScanDropzone';
 import { AiMealReviewModal } from '../components/AiMealReviewModal';
-import { WeeklyCalorieMiniChart } from '../components/WeeklyCalorieMiniChart';
+import { WeeklyCalorieMiniChart, DayCalorieData } from '../components/WeeklyCalorieMiniChart';
 import { MacroBadge } from '../components/MacroBadge';
 import { FavoriteMealsQuickWidget } from '../components/FavoriteMealsQuickWidget';
 import { api } from '../services/api';
 import { DailySummary, MealType, MealAnalysisResponse, CreateMealRequest, MealItem } from '../types';
-import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart } from 'lucide-react';
+import { toLocalISODate, shiftISODate } from '../utils/formatters';
+import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 interface MealCategoryConfig {
   type: MealType;
@@ -29,9 +30,33 @@ interface DashboardPageProps {
   onNavigateToFavorites?: () => void;
 }
 
+const SHORT_WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const FULL_WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+function mapDailySummariesToWeeklyChart(summaries: DailySummary[], referenceDate: string): DayCalorieData[] {
+  const todayStr = toLocalISODate();
+  return summaries.map((item) => {
+    const [y, m, d] = item.date.split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    const dow = dt.getDay();
+    const isToday = item.date === todayStr;
+    const isSelected = item.date === referenceDate;
+    return {
+      day: SHORT_WEEKDAYS[dow],
+      fullDayName: isToday ? `${FULL_WEEKDAYS[dow]} (Hôm nay)` : FULL_WEEKDAYS[dow],
+      date: `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`,
+      calories: Math.round(item.totalCaloriesConsumed || 0),
+      isToday: isSelected,
+    };
+  });
+}
+
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavorites }) => {
+  const [selectedDate, setSelectedDate] = useState<string>(() => toLocalISODate());
   const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [weeklyData, setWeeklyData] = useState<DayCalorieData[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSavingMeal, setIsSavingMeal] = useState(false);
@@ -41,83 +66,99 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData(selectedDate);
+  }, [selectedDate]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (dateStr: string = selectedDate) => {
     try {
       setLoading(true);
-      const res = await api.getDailySummary();
-      if (res.success && res.data) {
-        setSummary(res.data);
+      setLoadError(null);
+      const startDate = shiftISODate(dateStr, -6);
+      const [dailyRes, rangeRes] = await Promise.all([
+        api.getDailySummary(dateStr),
+        api.getRangeSummary(startDate, dateStr).catch(() => null),
+      ]);
+
+      if (dailyRes.success && dailyRes.data) {
+        setSummary(dailyRes.data);
       } else {
-        throw new Error('No data');
+        throw new Error(dailyRes.message || 'Không thể tải dữ liệu ngày');
       }
-    } catch (e) {
-      // Fallback realistic Figma spec mock data
-      setSummary({
-        date: new Date().toISOString().split('T')[0],
-        calorieTarget: 2000,
-        totalCaloriesConsumed: 1450,
-        remainingCalories: 550,
-        carbsTargetGrams: 220,
-        totalCarbsConsumed: 140,
-        proteinTargetGrams: 130,
-        totalProteinConsumed: 95,
-        fatTargetGrams: 60,
-        totalFatConsumed: 42,
-        mealCount: 3,
-        meals: [
-          {
-            id: 1,
-            mealDate: new Date().toISOString().split('T')[0],
-            name: 'Phở bò tái & Trà đào',
-            mealType: 'BREAKFAST',
-            mealTypeDisplayName: 'Bữa sáng',
-            totalCalories: 420,
-            totalProtein: 25,
-            totalCarbs: 60,
-            totalFat: 8,
-            healthTip: 'Bữa sáng giàu protein và tinh bột phức tạp cung cấp năng lượng ổn định cho cả buổi sáng.',
-            items: [
-              { id: 1, name: 'Phở bò tái', estimatedWeightGrams: 450, servingSize: '1 bát', calories: 370, protein: 22, carbs: 54, fat: 8 },
-              { id: 2, name: 'Trà đào ít đường', estimatedWeightGrams: 300, servingSize: '1 ly', calories: 50, protein: 3, carbs: 6, fat: 0 }
-            ]
-          },
-          {
-            id: 2,
-            mealDate: new Date().toISOString().split('T')[0],
-            name: 'Cơm sườn nướng & Canh cải',
-            mealType: 'LUNCH',
-            mealTypeDisplayName: 'Bữa trưa',
-            totalCalories: 650,
-            totalProtein: 45,
-            totalCarbs: 65,
-            totalFat: 24,
-            healthTip: 'Cân đối tốt giữa đạm từ sườn nướng và chất xơ từ rau canh cải.',
-            items: [
-              { id: 3, name: 'Cơm tấm sườn nướng', estimatedWeightGrams: 350, servingSize: '1 đĩa', calories: 590, protein: 40, carbs: 60, fat: 22 },
-              { id: 4, name: 'Canh cải ngọt thịt băm', estimatedWeightGrams: 200, servingSize: '1 bát', calories: 60, protein: 5, carbs: 5, fat: 2 }
-            ]
-          },
-          {
-            id: 3,
-            mealDate: new Date().toISOString().split('T')[0],
-            name: 'Salad ức gà mè rang',
-            mealType: 'DINNER',
-            mealTypeDisplayName: 'Bữa tối',
-            totalCalories: 380,
-            totalProtein: 25,
-            totalCarbs: 15,
-            totalFat: 10,
-            healthTip: 'Bữa tối nhẹ nhàng ít tinh bột giúp hệ tiêu hóa nghỉ ngơi và hỗ trợ giấc ngủ sâu.',
-            items: [
-              { id: 5, name: 'Salad ức gà áp chảo', estimatedWeightGrams: 250, servingSize: '1 đĩa', calories: 320, protein: 23, carbs: 12, fat: 8 },
-              { id: 6, name: 'Sốt mè rang Nhật', estimatedWeightGrams: 15, servingSize: '15ml', calories: 60, protein: 2, carbs: 3, fat: 2 }
-            ]
-          }
-        ]
-      });
+
+      if (rangeRes?.success && rangeRes.data?.dailySummaries?.length) {
+        setWeeklyData(mapDailySummariesToWeeklyChart(rangeRes.data.dailySummaries, dateStr));
+      }
+    } catch (e: any) {
+      const isOfflineDemo = localStorage.getItem('ai_calorie_token') === 'mock_jwt_token_demo_nutriai';
+      if (isOfflineDemo) {
+        // Fallback realistic Figma spec mock data for offline Demo mode only
+        setSummary({
+          date: dateStr,
+          calorieTarget: 2000,
+          totalCaloriesConsumed: 1450,
+          remainingCalories: 550,
+          carbsTargetGrams: 220,
+          totalCarbsConsumed: 140,
+          proteinTargetGrams: 130,
+          totalProteinConsumed: 95,
+          fatTargetGrams: 60,
+          totalFatConsumed: 42,
+          mealCount: 3,
+          meals: [
+            {
+              id: 1,
+              mealDate: dateStr,
+              name: 'Phở bò tái & Trà đào',
+              mealType: 'BREAKFAST',
+              mealTypeDisplayName: 'Bữa sáng',
+              totalCalories: 420,
+              totalProtein: 25,
+              totalCarbs: 60,
+              totalFat: 8,
+              healthTip: 'Bữa sáng giàu protein và tinh bột phức tạp cung cấp năng lượng ổn định cho cả buổi sáng.',
+              items: [
+                { id: 1, name: 'Phở bò tái', estimatedWeightGrams: 450, servingSize: '1 bát', calories: 370, protein: 22, carbs: 54, fat: 8 },
+                { id: 2, name: 'Trà đào ít đường', estimatedWeightGrams: 300, servingSize: '1 ly', calories: 50, protein: 3, carbs: 6, fat: 0 }
+              ]
+            },
+            {
+              id: 2,
+              mealDate: dateStr,
+              name: 'Cơm sườn nướng & Canh cải',
+              mealType: 'LUNCH',
+              mealTypeDisplayName: 'Bữa trưa',
+              totalCalories: 650,
+              totalProtein: 45,
+              totalCarbs: 65,
+              totalFat: 24,
+              healthTip: 'Cân đối tốt giữa đạm từ sườn nướng và chất xơ từ rau canh cải.',
+              items: [
+                { id: 3, name: 'Cơm tấm sườn nướng', estimatedWeightGrams: 350, servingSize: '1 đĩa', calories: 590, protein: 40, carbs: 60, fat: 22 },
+                { id: 4, name: 'Canh cải ngọt thịt băm', estimatedWeightGrams: 200, servingSize: '1 bát', calories: 60, protein: 5, carbs: 5, fat: 2 }
+              ]
+            },
+            {
+              id: 3,
+              mealDate: dateStr,
+              name: 'Salad ức gà mè rang',
+              mealType: 'DINNER',
+              mealTypeDisplayName: 'Bữa tối',
+              totalCalories: 380,
+              totalProtein: 25,
+              totalCarbs: 15,
+              totalFat: 10,
+              healthTip: 'Bữa tối nhẹ nhàng ít tinh bột giúp hệ tiêu hóa nghỉ ngơi và hỗ trợ giấc ngủ sâu.',
+              items: [
+                { id: 5, name: 'Salad ức gà áp chảo', estimatedWeightGrams: 250, servingSize: '1 đĩa', calories: 320, protein: 23, carbs: 12, fat: 8 },
+                { id: 6, name: 'Sốt mè rang Nhật', estimatedWeightGrams: 15, servingSize: '15ml', calories: 60, protein: 2, carbs: 3, fat: 2 }
+              ]
+            }
+          ]
+        });
+        setWeeklyData(undefined);
+      } else {
+        setLoadError(e?.response?.data?.message || e?.message || 'Không thể kết nối máy chủ Backend để tải dữ liệu.');
+      }
     } finally {
       setLoading(false);
     }
@@ -176,7 +217,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
     try {
       setIsSavingMeal(true);
       const payload: CreateMealRequest = {
-        mealDate: new Date().toISOString().split('T')[0],
+        mealDate: selectedDate,
         mealType: targetMealTypeForScan,
         name: mealData.name,
         imageUrl: aiAnalysisResult?.imageUrl || selectedImagePreview,
@@ -279,23 +320,83 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
           <h2 className="page-title">Tổng quan dinh dưỡng</h2>
           <p className="page-subtitle">Theo dõi tiến độ tiêu thụ năng lượng và tỷ lệ dinh dưỡng theo thời gian thực</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{
-            fontSize: '13px',
-            color: 'var(--color-text-secondary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: 'var(--color-bg-surface-subtle)',
-            border: '1px solid var(--color-border-default)'
-          }}>
-            <Calendar size={14} color="var(--color-brand-primary)" />
-            <span>Hôm nay: {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '6px 10px' }}
+            onClick={() => setSelectedDate((prev) => shiftISODate(prev, -1))}
+            aria-label="Xem ngày trước"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+
+          <label htmlFor="dashboard-date-picker" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+            Chọn ngày xem nhật ký
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={14} color="var(--color-brand-primary)" aria-hidden="true" />
+            <input
+              id="dashboard-date-picker"
+              type="date"
+              className="form-input"
+              value={selectedDate}
+              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+              style={{ width: 'auto', padding: '6px 10px', fontSize: '13px' }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '6px 10px' }}
+            onClick={() => setSelectedDate((prev) => shiftISODate(prev, 1))}
+            aria-label="Xem ngày tiếp theo"
+          >
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+
+          {selectedDate !== toLocalISODate() && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ padding: '6px 12px', fontSize: '12px' }}
+              onClick={() => setSelectedDate(toLocalISODate())}
+            >
+              Hôm nay
+            </button>
+          )}
         </div>
       </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid var(--color-status-danger)',
+            color: 'var(--color-status-danger)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 'var(--spacing-5)',
+            gap: '12px',
+          }}
+        >
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>{loadError}</span>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '6px 12px', fontSize: '12px' }}
+            onClick={() => fetchDashboardData(selectedDate)}
+          >
+            <RefreshCw size={14} aria-hidden="true" />
+            Thử lại
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px', color: 'var(--color-text-secondary)' }}>
@@ -635,13 +736,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
 
               {/* Quick Log Favorite Meals Widget */}
               <FavoriteMealsQuickWidget
-                onMealLogged={fetchDashboardData}
+                selectedDate={selectedDate}
+                onMealLogged={() => fetchDashboardData(selectedDate)}
                 onNavigateToFavorites={onNavigateToFavorites}
               />
 
               {/* Weekly Calorie Mini Bar Chart (US-002) */}
               <WeeklyCalorieMiniChart
                 targetCalories={calorieTarget}
+                data={weeklyData}
               />
 
               {/* AI Health Advice Callout */}

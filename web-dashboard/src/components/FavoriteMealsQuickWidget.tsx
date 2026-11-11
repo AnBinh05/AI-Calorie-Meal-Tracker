@@ -3,12 +3,16 @@ import { api } from '../services/api';
 import { FavoriteMeal } from '../types';
 import { Heart, Zap, Loader2, ArrowRight } from 'lucide-react';
 
+import { toLocalISODate } from '../utils/formatters';
+
 interface FavoriteMealsQuickWidgetProps {
+  selectedDate?: string;
   onMealLogged?: () => void;
   onNavigateToFavorites?: () => void;
 }
 
 export const FavoriteMealsQuickWidget: React.FC<FavoriteMealsQuickWidgetProps> = ({
+  selectedDate,
   onMealLogged,
   onNavigateToFavorites,
 }) => {
@@ -39,7 +43,7 @@ export const FavoriteMealsQuickWidget: React.FC<FavoriteMealsQuickWidgetProps> =
     try {
       setLoggingId(fav.id);
       const res = await api.quickLogFavoriteMeal(fav.id, {
-        mealDate: new Date().toISOString().split('T')[0],
+        mealDate: selectedDate || toLocalISODate(),
         mealType: fav.mealType,
       });
 

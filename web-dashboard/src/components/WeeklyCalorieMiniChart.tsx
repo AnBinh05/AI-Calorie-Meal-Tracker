@@ -29,19 +29,24 @@ export const WeeklyCalorieMiniChart: React.FC<WeeklyCalorieMiniChartProps> = ({
   data = DEFAULT_WEEKLY_DATA,
 }) => {
   const [hoveredDay, setHoveredDay] = useState<DayCalorieData | null>(null);
+  const safeTarget = targetCalories > 0 ? targetCalories : 2000;
+  const chartData = data.length > 0 ? data : DEFAULT_WEEKLY_DATA;
 
-  const maxCal = Math.max(...data.map(d => d.calories), targetCalories * 1.25);
+  const maxCal = Math.max(...chartData.map(d => d.calories), safeTarget * 1.25);
   const chartHeight = 120; // px
 
-  const averageCalories = Math.round(data.reduce((sum, d) => sum + d.calories, 0) / data.length);
-  const daysOnTarget = data.filter(d => d.calories <= targetCalories * 1.05).length;
+  const averageCalories = Math.round(chartData.reduce((sum, d) => sum + d.calories, 0) / chartData.length);
+  const daysOnTarget = chartData.filter(d => d.calories > 0 && d.calories <= safeTarget * 1.05).length;
 
-  const targetLineY = chartHeight - (targetCalories / maxCal) * chartHeight;
+  const targetLineY = chartHeight - (safeTarget / maxCal) * chartHeight;
 
   const getBarColor = (calories: number) => {
-    if (calories <= targetCalories) {
+    if (calories <= 0) {
+      return 'var(--color-border-default)';
+    }
+    if (calories <= safeTarget) {
       return 'var(--color-brand-primary)';
-    } else if (calories <= targetCalories * 1.1) {
+    } else if (calories <= safeTarget * 1.1) {
       return 'var(--color-macro-carbs)';
     } else {
       return 'var(--color-status-danger)';
@@ -60,7 +65,7 @@ export const WeeklyCalorieMiniChart: React.FC<WeeklyCalorieMiniChartProps> = ({
             </h3>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-            Mục tiêu chuẩn: <strong className="tabular-nums">{targetCalories.toLocaleString()} kcal/ngày</strong>
+            Mục tiêu chuẩn: <strong className="tabular-nums">{safeTarget.toLocaleString()} kcal/ngày</strong>
           </p>
         </div>
         <div style={{
@@ -122,19 +127,19 @@ export const WeeklyCalorieMiniChart: React.FC<WeeklyCalorieMiniChartProps> = ({
               borderRadius: '2px'
             }}
           >
-            Mục tiêu {targetCalories}k
+            Mục tiêu {safeTarget.toLocaleString()}
           </span>
         </div>
 
         {/* 7 Vertical Bars */}
-        {data.map((item) => {
-          const barHeight = Math.max((item.calories / maxCal) * chartHeight, 10);
+        {chartData.map((item) => {
+          const barHeight = Math.max((item.calories / maxCal) * chartHeight, item.calories > 0 ? 10 : 4);
           const barColor = getBarColor(item.calories);
-          const isSelected = hoveredDay?.day === item.day;
+          const isSelected = hoveredDay?.date === item.date && hoveredDay?.day === item.day;
 
           return (
             <div
-              key={item.day}
+              key={`${item.date}-${item.day}`}
               onMouseEnter={() => setHoveredDay(item)}
               onMouseLeave={() => setHoveredDay(null)}
               onFocus={() => setHoveredDay(item)}
@@ -178,9 +183,9 @@ export const WeeklyCalorieMiniChart: React.FC<WeeklyCalorieMiniChartProps> = ({
 
       {/* X-Axis Labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', padding: '0 4px' }}>
-        {data.map((item) => (
+        {chartData.map((item) => (
           <div
-            key={item.day}
+            key={`${item.date}-${item.day}-label`}
             style={{
               flex: 1,
               textAlign: 'center',
@@ -214,9 +219,9 @@ export const WeeklyCalorieMiniChart: React.FC<WeeklyCalorieMiniChartProps> = ({
               {hoveredDay.fullDayName} ({hoveredDay.date}):
             </span>
             <span className="tabular-nums" style={{ fontSize: '13px', fontWeight: '800', color: getBarColor(hoveredDay.calories) }}>
-              {hoveredDay.calories.toLocaleString()} kcal{' '}
+              {Math.round(hoveredDay.calories).toLocaleString()} kcal{' '}
               <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
-                ({hoveredDay.calories - targetCalories >= 0 ? '+' : ''}{hoveredDay.calories - targetCalories} kcal)
+                ({Math.round(hoveredDay.calories - safeTarget) >= 0 ? '+' : ''}{Math.round(hoveredDay.calories - safeTarget)} kcal)
               </span>
             </span>
           </>
