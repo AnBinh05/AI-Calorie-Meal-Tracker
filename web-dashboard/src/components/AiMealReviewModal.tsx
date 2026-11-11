@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Plus, Minus, Check, Trash2 } from 'lucide-react';
+import { X, Sparkles, Plus, Minus, Check, Trash2, Utensils } from 'lucide-react';
 import { MacroBadge } from './MacroBadge';
-import { MealItem } from '../types';
+import { MealItem, MealType } from '../types';
+import { loadAiPreferences } from '../pages/SettingsPage';
 
 export interface ReviewItemState {
   id: string;
@@ -24,10 +25,13 @@ export interface AiMealReviewModalProps {
   onClose: () => void;
   imagePreviewUrl?: string;
   initialMealName?: string;
+  initialMealType?: MealType;
   initialItems?: MealItem[];
   healthTip?: string;
+  mode?: 'ai' | 'manual' | 'edit';
   onSaveMeal: (mealData: {
     name: string;
+    mealType: MealType;
     healthTip?: string;
     items: MealItem[];
     totalCalories: number;
@@ -38,13 +42,17 @@ export interface AiMealReviewModalProps {
   isSaving?: boolean;
 }
 
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80';
+
 export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
   isOpen,
   onClose,
-  imagePreviewUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80',
+  imagePreviewUrl,
   initialMealName = 'Bữa ăn phân tích AI',
+  initialMealType = 'LUNCH',
   initialItems = [],
   healthTip = '',
+  mode = 'ai',
   onSaveMeal,
   isSaving = false,
 }) => {
@@ -52,14 +60,23 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const [mealName, setMealName] = useState(initialMealName);
+  const [mealType, setMealType] = useState<MealType>(initialMealType);
   const [items, setItems] = useState<ReviewItemState[]>([]);
   const [includeExtraOil, setIncludeExtraOil] = useState(false);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemCalories, setNewItemCalories] = useState('150');
+  const [newItemGrams, setNewItemGrams] = useState('100');
+  const [newItemProtein, setNewItemProtein] = useState('10');
+  const [newItemCarbs, setNewItemCarbs] = useState('15');
+  const [newItemFat, setNewItemFat] = useState('5');
   const [isAddingItem, setIsAddingItem] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setMealName(initialMealName || 'Bữa ăn phân tích AI');
+      setMealName(initialMealName || (mode === 'manual' ? 'Bữa ăn tự nhập' : 'Bữa ăn phân tích AI'));
+      setMealType(initialMealType || 'LUNCH');
+      setIncludeExtraOil(mode === 'ai' ? loadAiPreferences().defaultExtraOil : false);
+      setIsAddingItem(mode === 'manual' && (!initialItems || initialItems.length === 0));
       if (initialItems && initialItems.length > 0) {
         setItems(
           initialItems.map((item, idx) => {
@@ -81,6 +98,8 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
             };
           })
         );
+      } else if (mode === 'manual') {
+        setItems([]);
       } else {
         // Fallback default item
         setItems([
@@ -102,7 +121,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
         ]);
       }
     }
-  }, [isOpen, initialMealName, initialItems]);
+  }, [isOpen, initialMealName, initialMealType, initialItems, mode]);
 
   // Keyboard accessibility: Escape key to close & Focus trap
   useEffect(() => {
@@ -185,23 +204,33 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
 
   const handleAddNewItem = () => {
     if (!newItemName.trim()) return;
+    const grams = Math.max(1, Number(newItemGrams) || 100);
+    const calories = Math.max(0, Number(newItemCalories) || 0);
+    const protein = Math.max(0, Number(newItemProtein) || 0);
+    const carbs = Math.max(0, Number(newItemCarbs) || 0);
+    const fat = Math.max(0, Number(newItemFat) || 0);
     const newItem: ReviewItemState = {
       id: String(Date.now()),
       name: newItemName.trim(),
-      grams: 100,
-      initialGrams: 100,
-      initialCalories: 150,
-      initialProtein: 5,
-      initialCarbs: 20,
-      initialFat: 5,
-      calories: 150,
-      protein: 5,
-      carbs: 20,
-      fat: 5,
+      grams,
+      initialGrams: grams,
+      initialCalories: calories,
+      initialProtein: protein,
+      initialCarbs: carbs,
+      initialFat: fat,
+      calories,
+      protein,
+      carbs,
+      fat,
       servingSize: '1 phần',
     };
     setItems((prev) => [...prev, newItem]);
     setNewItemName('');
+    setNewItemCalories('150');
+    setNewItemGrams('100');
+    setNewItemProtein('10');
+    setNewItemCarbs('15');
+    setNewItemFat('5');
     setIsAddingItem(false);
   };
 
@@ -211,21 +240,24 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
       return;
     }
 
+    const calFactor = includeExtraOil ? 1.12 : 1.0;
+    const fatFactor = includeExtraOil ? 1.25 : 1.0;
     const payloadItems: MealItem[] = items.map((item) => ({
       name: item.name,
       estimatedWeightGrams: item.grams,
       servingSize: item.servingSize || '1 phần',
-      calories: item.calories,
+      calories: Math.round(item.calories * calFactor),
       protein: item.protein,
       carbs: item.carbs,
-      fat: item.fat,
+      fat: Math.round(item.fat * fatFactor * 10) / 10,
       fiber: 0,
-      confidenceScore: 1.0,
+      confidenceScore: mode === 'manual' ? undefined : 1.0,
     }));
 
     await onSaveMeal({
       name: mealName.trim() || 'Bữa ăn',
-      healthTip: healthTip || 'Bữa ăn đã được ghi nhận vào nhật ký dinh dưỡng.',
+      mealType,
+      healthTip: healthTip || (mode === 'manual' ? undefined : 'Bữa ăn đã được ghi nhận vào nhật ký dinh dưỡng.'),
       items: payloadItems,
       totalCalories,
       totalProtein,
@@ -282,7 +314,11 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                   color: 'var(--color-text-primary)',
                 }}
               >
-                Kết quả Gemini AI bóc tách món ăn
+                {mode === 'edit'
+                  ? 'Chỉnh sửa bữa ăn đã lưu'
+                  : mode === 'manual'
+                    ? 'Thêm bữa ăn thủ công'
+                    : 'Kết quả Gemini AI bóc tách món ăn'}
               </h3>
               <p
                 id="ai-review-desc"
@@ -328,11 +364,35 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                 position: 'relative',
               }}
             >
-              <img
-                src={imagePreviewUrl}
-                alt="Ảnh chụp đĩa ăn đã được AI phân tích"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              {imagePreviewUrl ? (
+                <img
+                  src={imagePreviewUrl}
+                  alt="Ảnh chụp đĩa ăn đã được AI phân tích"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : mode === 'manual' ? (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  <Utensils size={36} aria-hidden="true" />
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Bữa ăn nhập thủ công</span>
+                </div>
+              ) : (
+                <img
+                  src={DEFAULT_PLACEHOLDER_IMAGE}
+                  alt="Ảnh minh họa bữa ăn"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
               <span
                 style={{
                   position: 'absolute',
@@ -350,7 +410,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
                   gap: '4px',
                 }}
               >
-                <Sparkles size={12} color="#10b981" /> AI Verified
+                <Sparkles size={12} color="#10b981" /> {mode === 'manual' ? 'Thủ công' : mode === 'edit' ? 'Chỉnh sửa' : 'AI Verified'}
               </span>
             </div>
 
@@ -416,18 +476,37 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               paddingRight: '4px',
             }}
           >
-            <div className="form-group" style={{ marginBottom: '4px' }}>
-              <label htmlFor="meal-name-input" className="form-label">
-                Tên bữa ăn
-              </label>
-              <input
-                id="meal-name-input"
-                type="text"
-                className="form-input"
-                value={mealName}
-                onChange={(e) => setMealName(e.target.value)}
-                required
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '10px', marginBottom: '4px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="meal-name-input" className="form-label">
+                  Tên bữa ăn
+                </label>
+                <input
+                  id="meal-name-input"
+                  type="text"
+                  className="form-input"
+                  value={mealName}
+                  onChange={(e) => setMealName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="meal-type-select" className="form-label">
+                  Loại bữa ăn
+                </label>
+                <select
+                  id="meal-type-select"
+                  className="form-select"
+                  value={mealType}
+                  onChange={(e) => setMealType(e.target.value as MealType)}
+                >
+                  <option value="BREAKFAST">Bữa sáng</option>
+                  <option value="LUNCH">Bữa trưa</option>
+                  <option value="DINNER">Bữa tối</option>
+                  <option value="SNACK">Bữa phụ</option>
+                </select>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
@@ -458,8 +537,9 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               <div
                 style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   gap: '8px',
-                  padding: '8px',
+                  padding: '10px',
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: 'var(--color-bg-surface-subtle)',
                   border: '1px dashed var(--color-brand-primary)',
@@ -467,32 +547,57 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
               >
                 <input
                   type="text"
+                  aria-label="Tên món mới"
                   placeholder="Nhập tên món mới (vd: Canh rau dền)"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
                   className="form-input"
-                  style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }}
+                  style={{ width: '100%', padding: '6px 8px', fontSize: '12px' }}
                   autoFocus
                 />
-                <button
-                  type="button"
-                  onClick={handleAddNewItem}
-                  className="btn btn-primary"
-                  style={{ padding: '4px 10px', fontSize: '12px' }}
-                >
-                  Thêm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingItem(false);
-                    setNewItemName('');
-                  }}
-                  className="btn btn-ghost"
-                  style={{ padding: '4px 8px', fontSize: '12px' }}
-                >
-                  Hủy
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+                  <div>
+                    <label htmlFor="new-item-grams" style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Gram</label>
+                    <input id="new-item-grams" type="number" min={1} value={newItemGrams} onChange={(e) => setNewItemGrams(e.target.value)} className="form-input tabular-nums" style={{ padding: '4px 6px', fontSize: '12px' }} />
+                  </div>
+                  <div>
+                    <label htmlFor="new-item-kcal" style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Kcal</label>
+                    <input id="new-item-kcal" type="number" min={0} value={newItemCalories} onChange={(e) => setNewItemCalories(e.target.value)} className="form-input tabular-nums" style={{ padding: '4px 6px', fontSize: '12px' }} />
+                  </div>
+                  <div>
+                    <label htmlFor="new-item-pro" style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Pro (g)</label>
+                    <input id="new-item-pro" type="number" min={0} value={newItemProtein} onChange={(e) => setNewItemProtein(e.target.value)} className="form-input tabular-nums" style={{ padding: '4px 6px', fontSize: '12px' }} />
+                  </div>
+                  <div>
+                    <label htmlFor="new-item-carb" style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Carb (g)</label>
+                    <input id="new-item-carb" type="number" min={0} value={newItemCarbs} onChange={(e) => setNewItemCarbs(e.target.value)} className="form-input tabular-nums" style={{ padding: '4px 6px', fontSize: '12px' }} />
+                  </div>
+                  <div>
+                    <label htmlFor="new-item-fat" style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Fat (g)</label>
+                    <input id="new-item-fat" type="number" min={0} value={newItemFat} onChange={(e) => setNewItemFat(e.target.value)} className="form-input tabular-nums" style={{ padding: '4px 6px', fontSize: '12px' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingItem(false);
+                      setNewItemName('');
+                    }}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px 10px', fontSize: '12px' }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddNewItem}
+                    className="btn btn-primary"
+                    style={{ padding: '4px 12px', fontSize: '12px' }}
+                  >
+                    Thêm món
+                  </button>
+                </div>
               </div>
             )}
 

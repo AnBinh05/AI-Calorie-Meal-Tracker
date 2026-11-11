@@ -132,7 +132,7 @@ AWS_ACCESS_KEY_ID=AKIA...access_key_cua_ban...
 AWS_SECRET_ACCESS_KEY=secret_access_key_cua_ban...
 
 # 5. Frontend trỏ tới Backend
-VITE_API_BASE_URL=http://<PUBLIC_IP_CUA_EC2>:8080
+VITE_API_BASE_URL=http://<PUBLIC_IP_CUA_EC2>:8080/api/v1
 ```
 *Nhấn `Ctrl + O` để lưu, sau đó nhấn `Ctrl + X` để thoát `nano`.*
 

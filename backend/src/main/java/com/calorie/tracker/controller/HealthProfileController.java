@@ -26,7 +26,7 @@ public class HealthProfileController {
         return ResponseEntity.ok(ApiResponse.ok(profile));
     }
 
-    @PostMapping
+    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     @Operation(summary = "Tạo mới hoặc cập nhật hồ sơ sức khỏe & mục tiêu calories/macros")
     public ResponseEntity<ApiResponse<HealthProfileDto>> upsertProfile(@Valid @RequestBody HealthProfileRequest request) {
         HealthProfileDto profile = healthProfileService.upsertMyProfile(request);

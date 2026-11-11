@@ -9,6 +9,7 @@ import { FavoriteMealsPage } from './pages/FavoriteMealsPage';
 import { MealHistoryPage } from './pages/MealHistoryPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage';
 import { AuthPage } from './pages/AuthPage';
 
 export function App() {
@@ -19,7 +20,7 @@ export function App() {
   if (isLoading) {
     return (
       <div style={{
-        height: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -47,6 +48,8 @@ export function App() {
         return <AnalyticsPage />;
       case 'profile':
         return <ProfilePage />;
+      case 'settings':
+        return <SettingsPage onOpenExport={() => setIsExportOpen(true)} />;
       case 'dashboard':
       default:
         return <DashboardPage onNavigateToFavorites={() => setActiveTab('favorites')} />;

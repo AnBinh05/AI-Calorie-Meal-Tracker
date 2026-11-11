@@ -1,20 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  if (!password) return { score: 0, label: '', color: 'var(--color-border-default)' };
+  let score = 0;
+  if (password.length >= 6) score += 1;
+  if (password.length >= 10) score += 1;
+  if (/[A-Z]/.test(password) && /[0-9]/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 1) return { score: 1, label: 'Yếu', color: 'var(--color-status-danger)' };
+  if (score === 2) return { score: 2, label: 'Trung bình', color: 'var(--color-status-warning)' };
+  if (score === 3) return { score: 3, label: 'Khỏe', color: 'var(--color-macro-protein)' };
+  return { score: 4, label: 'Rất mạnh', color: 'var(--color-status-success)' };
+}
 
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const { login, register } = useAuth();
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!isLogin && password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -25,6 +47,18 @@ export const AuthPage: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await login('demo@nutriai.vn', '123456');
+    } catch (err: any) {
+      setError(err.message || 'Không thể đăng nhập tài khoản Demo');
     } finally {
       setLoading(false);
     }
@@ -127,18 +161,67 @@ export const AuthPage: React.FC = () => {
             <label htmlFor="auth-password" className="form-label">
               Mật khẩu
             </label>
-            <input
-              id="auth-password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={isLogin ? 'current-password' : 'new-password'}
-              aria-describedby={error ? 'auth-form-error' : undefined}
-              aria-invalid={!!error}
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                id="auth-password"
+                type={showPassword ? 'text' : 'password'}
+                className="form-input"
+                style={{ paddingRight: '42px' }}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                aria-describedby={error ? 'auth-form-error' : !isLogin ? 'password-strength-hint' : undefined}
+                aria-invalid={!!error}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
+            </div>
+
+            {!isLogin && (
+              <div id="password-strength-hint" style={{ marginTop: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '4px' }}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      style={{
+                        height: '4px',
+                        borderRadius: 'var(--radius-full)',
+                        backgroundColor: passwordStrength.score >= level ? passwordStrength.color : 'var(--color-border-default)',
+                        transition: 'background-color 150ms ease-out',
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+                  <span>Tối thiểu 6 ký tự</span>
+                  {password && (
+                    <span style={{ fontWeight: 700, color: passwordStrength.color }}>
+                      Độ mạnh: {passwordStrength.label}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -156,9 +239,8 @@ export const AuthPage: React.FC = () => {
         <div style={{ marginTop: 'var(--spacing-4)' }}>
           <button
             type="button"
-            onClick={async () => {
-              await login('demo@nutriai.vn', 'demo123');
-            }}
+            disabled={loading}
+            onClick={handleDemoLogin}
             className="btn btn-outline"
             style={{
               width: '100%',

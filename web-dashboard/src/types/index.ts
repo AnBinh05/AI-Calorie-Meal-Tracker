@@ -30,6 +30,7 @@ export interface HealthProfile {
   dailyProteinTargetGrams: number;
   dailyCarbsTargetGrams: number;
   dailyFatTargetGrams: number;
+  customDailyCalorieTarget?: number;
   updatedAt?: string;
 }
 

@@ -15,7 +15,10 @@ import {
   User,
 } from '../types';
 
-export const BASE_API_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080/api/v1';
+const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '');
+export const BASE_API_URL = rawApiBase
+  ? (rawApiBase.endsWith('/api/v1') ? rawApiBase : `${rawApiBase}/api/v1`)
+  : 'http://localhost:8080/api/v1';
 
 const apiClient = axios.create({
   baseURL: BASE_API_URL,
@@ -31,6 +34,20 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      const token = localStorage.getItem('ai_calorie_token');
+      if (token && token !== 'mock_jwt_token_demo_nutriai') {
+        localStorage.removeItem('ai_calorie_token');
+        window.dispatchEvent(new CustomEvent('nutriai:unauthorized'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const api = {
   // Auth
@@ -77,6 +94,11 @@ export const api = {
 
   async createMeal(mealData: CreateMealRequest): Promise<ApiResponse<Meal>> {
     const res = await apiClient.post<ApiResponse<Meal>>('/meals', mealData);
+    return res.data;
+  },
+
+  async updateMeal(id: number, mealData: Partial<CreateMealRequest>): Promise<ApiResponse<Meal>> {
+    const res = await apiClient.put<ApiResponse<Meal>>(`/meals/${id}`, mealData);
     return res.data;
   },
 

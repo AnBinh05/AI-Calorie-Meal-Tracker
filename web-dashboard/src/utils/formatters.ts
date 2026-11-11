@@ -24,3 +24,22 @@ export function formatDateVietnamese(date: Date | string): string {
     day: 'numeric',
   });
 }
+
+/**
+ * Format Date to YYYY-MM-DD in the user's local timezone (avoids UTC midnight shift).
+ */
+export function toLocalISODate(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Shift a YYYY-MM-DD string by `deltaDays` in local time.
+ */
+export function shiftISODate(isoDate: string, deltaDays: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const dt = new Date(y, (m || 1) - 1, (d || 1) + deltaDays);
+  return toLocalISODate(dt);
+}
