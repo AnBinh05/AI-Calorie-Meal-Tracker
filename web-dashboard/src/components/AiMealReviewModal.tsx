@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Plus, Minus, Check, Trash2, Utensils } from 'lucide-react';
 import { MacroBadge } from './MacroBadge';
 import { MealItem, MealType } from '../types';
+import { loadAiPreferences } from '../pages/SettingsPage';
 
 export interface ReviewItemState {
   id: string;
@@ -74,7 +75,7 @@ export const AiMealReviewModal: React.FC<AiMealReviewModalProps> = ({
     if (isOpen) {
       setMealName(initialMealName || (mode === 'manual' ? 'Bữa ăn tự nhập' : 'Bữa ăn phân tích AI'));
       setMealType(initialMealType || 'LUNCH');
-      setIncludeExtraOil(false);
+      setIncludeExtraOil(mode === 'ai' ? loadAiPreferences().defaultExtraOil : false);
       setIsAddingItem(mode === 'manual' && (!initialItems || initialItems.length === 0));
       if (initialItems && initialItems.length > 0) {
         setItems(
