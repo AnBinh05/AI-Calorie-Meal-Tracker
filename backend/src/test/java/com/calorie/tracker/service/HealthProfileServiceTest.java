@@ -51,12 +51,12 @@ class HealthProfileServiceTest {
                 .gender(Gender.MALE)
                 .heightCm(175.0)
                 .weightKg(75.0)
-                .activityLevel(ActivityLevel.MODERATE) // x1.55
-                .goal(Goal.LOSE_WEIGHT)               // TDEE - 500 kcal
+                .activityLevel(ActivityLevel.MODERATELY_ACTIVE) // x1.55
+                .goal(Goal.LOSE_WEIGHT)                         // TDEE - 500 kcal
                 .build();
 
         when(userService.getCurrentAuthenticatedUser()).thenReturn(mockUser);
-        when(healthProfileRepository.findByUserId(1L)).thenReturn(Optional.empty());
+        when(healthProfileRepository.findByUser(mockUser)).thenReturn(Optional.empty());
         when(healthProfileRepository.save(any(HealthProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -65,7 +65,7 @@ class HealthProfileServiceTest {
         // Then
         // BMI = 75 / (1.75 * 1.75) = 24.5
         assertThat(result.getBmi()).isEqualTo(24.5);
-        assertThat(result.getBmiCategory()).isEqualTo("Bình thường");
+        assertThat(result.getBmiCategory()).isEqualTo("Bình thường (Normal weight)");
 
         // BMR (Male) = (10 * 75) + (6.25 * 175) - (5 * 25) + 5 = 750 + 1093.75 - 125 + 5 = 1723.75 -> round to 1724
         assertThat(result.getBmr()).isEqualTo(1724);
@@ -93,12 +93,12 @@ class HealthProfileServiceTest {
                 .gender(Gender.FEMALE)
                 .heightCm(160.0)
                 .weightKg(55.0)
-                .activityLevel(ActivityLevel.LIGHT)   // x1.375
-                .goal(Goal.MAINTAIN_WEIGHT)
+                .activityLevel(ActivityLevel.LIGHTLY_ACTIVE) // x1.375
+                .goal(Goal.MAINTAIN)
                 .build();
 
         when(userService.getCurrentAuthenticatedUser()).thenReturn(mockUser);
-        when(healthProfileRepository.findByUserId(1L)).thenReturn(Optional.empty());
+        when(healthProfileRepository.findByUser(mockUser)).thenReturn(Optional.empty());
         when(healthProfileRepository.save(any(HealthProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When

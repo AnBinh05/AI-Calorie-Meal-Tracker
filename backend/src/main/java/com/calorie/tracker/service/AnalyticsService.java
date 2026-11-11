@@ -10,6 +10,7 @@ import com.calorie.tracker.repository.HealthProfileRepository;
 import com.calorie.tracker.repository.MealRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AnalyticsService {
 
     private final MealRepository mealRepository;
@@ -31,43 +33,31 @@ public class AnalyticsService {
         List<Meal> meals = mealRepository.findByUserIdAndMealDateOrderByCreatedAtDesc(user.getId(), queryDate);
         HealthProfile profile = healthProfileRepository.findByUser(user).orElse(null);
 
-        int calorieTarget = profile != null && profile.getDailyCalorieTarget() != null ? profile.getDailyCalorieTarget() : 2000;
-        int proteinTarget = profile != null && profile.getDailyProteinTargetGrams() != null ? profile.getDailyProteinTargetGrams() : 150;
-        int carbsTarget = profile != null && profile.getDailyCarbsTargetGrams() != null ? profile.getDailyCarbsTargetGrams() : 225;
-        int fatTarget = profile != null && profile.getDailyFatTargetGrams() != null ? profile.getDailyFatTargetGrams() : 55;
-
-        double totalCalories = meals.stream().mapToDouble(m -> m.getTotalCalories() != null ? m.getTotalCalories() : 0.0).sum();
-        double totalProtein = meals.stream().mapToDouble(m -> m.getTotalProtein() != null ? m.getTotalProtein() : 0.0).sum();
-        double totalCarbs = meals.stream().mapToDouble(m -> m.getTotalCarbs() != null ? m.getTotalCarbs() : 0.0).sum();
-        double totalFat = meals.stream().mapToDouble(m -> m.getTotalFat() != null ? m.getTotalFat() : 0.0).sum();
-
-        List<MealDto> mealDtos = meals.stream().map(mealService::mapToDto).collect(Collectors.toList());
-
-        return DailySummaryDto.builder()
-                .date(queryDate)
-                .totalCaloriesConsumed(Math.round(totalCalories * 10.0) / 10.0)
-                .calorieTarget(calorieTarget)
-                .remainingCalories(Math.round((calorieTarget - totalCalories) * 10.0) / 10.0)
-                .totalProteinConsumed(Math.round(totalProtein * 10.0) / 10.0)
-                .proteinTargetGrams(proteinTarget)
-                .totalCarbsConsumed(Math.round(totalCarbs * 10.0) / 10.0)
-                .carbsTargetGrams(carbsTarget)
-                .totalFatConsumed(Math.round(totalFat * 10.0) / 10.0)
-                .fatTargetGrams(fatTarget)
-                .mealCount(meals.size())
-                .meals(mealDtos)
-                .build();
+        return buildDailySummary(queryDate, meals, profile);
     }
 
     public DateRangeSummaryDto getDateRangeSummary(LocalDate startDate, LocalDate endDate) {
         User user = userService.getCurrentAuthenticatedUser();
         LocalDate start = (startDate != null) ? startDate : LocalDate.now().minusDays(6);
         LocalDate end = (endDate != null) ? endDate : LocalDate.now();
+        if (start.isAfter(end)) {
+            LocalDate tmp = start;
+            start = end;
+            end = tmp;
+        }
+
+        List<Meal> allMeals = mealRepository.findByUserIdAndMealDateBetweenOrderByMealDateAscCreatedAtAsc(
+                user.getId(), start, end
+        );
+        Map<LocalDate, List<Meal>> mealsByDate = allMeals.stream()
+                .collect(Collectors.groupingBy(Meal::getMealDate));
+        HealthProfile profile = healthProfileRepository.findByUser(user).orElse(null);
 
         List<DailySummaryDto> summaries = new ArrayList<>();
         LocalDate current = start;
         while (!current.isAfter(end)) {
-            summaries.add(getDailySummary(current));
+            List<Meal> dayMeals = mealsByDate.getOrDefault(current, Collections.emptyList());
+            summaries.add(buildDailySummary(current, dayMeals, profile));
             current = current.plusDays(1);
         }
 
@@ -95,7 +85,6 @@ public class AnalyticsService {
             macroDistribution.put("fatPercent", 25.0);
         }
 
-        HealthProfile profile = healthProfileRepository.findByUser(user).orElse(null);
         int calorieTarget = profile != null && profile.getDailyCalorieTarget() != null ? profile.getDailyCalorieTarget() : 2000;
 
         return DateRangeSummaryDto.builder()
@@ -108,6 +97,35 @@ public class AnalyticsService {
                 .dailyCalorieTarget(calorieTarget)
                 .dailySummaries(summaries)
                 .macroDistributionPercent(macroDistribution)
+                .build();
+    }
+
+    private DailySummaryDto buildDailySummary(LocalDate queryDate, List<Meal> meals, HealthProfile profile) {
+        int calorieTarget = profile != null && profile.getDailyCalorieTarget() != null ? profile.getDailyCalorieTarget() : 2000;
+        int proteinTarget = profile != null && profile.getDailyProteinTargetGrams() != null ? profile.getDailyProteinTargetGrams() : 150;
+        int carbsTarget = profile != null && profile.getDailyCarbsTargetGrams() != null ? profile.getDailyCarbsTargetGrams() : 225;
+        int fatTarget = profile != null && profile.getDailyFatTargetGrams() != null ? profile.getDailyFatTargetGrams() : 55;
+
+        double totalCalories = meals.stream().mapToDouble(m -> m.getTotalCalories() != null ? m.getTotalCalories() : 0.0).sum();
+        double totalProtein = meals.stream().mapToDouble(m -> m.getTotalProtein() != null ? m.getTotalProtein() : 0.0).sum();
+        double totalCarbs = meals.stream().mapToDouble(m -> m.getTotalCarbs() != null ? m.getTotalCarbs() : 0.0).sum();
+        double totalFat = meals.stream().mapToDouble(m -> m.getTotalFat() != null ? m.getTotalFat() : 0.0).sum();
+
+        List<MealDto> mealDtos = meals.stream().map(mealService::mapToDto).collect(Collectors.toList());
+
+        return DailySummaryDto.builder()
+                .date(queryDate)
+                .totalCaloriesConsumed(Math.round(totalCalories * 10.0) / 10.0)
+                .calorieTarget(calorieTarget)
+                .remainingCalories(Math.round((calorieTarget - totalCalories) * 10.0) / 10.0)
+                .totalProteinConsumed(Math.round(totalProtein * 10.0) / 10.0)
+                .proteinTargetGrams(proteinTarget)
+                .totalCarbsConsumed(Math.round(totalCarbs * 10.0) / 10.0)
+                .carbsTargetGrams(carbsTarget)
+                .totalFatConsumed(Math.round(totalFat * 10.0) / 10.0)
+                .fatTargetGrams(fatTarget)
+                .mealCount(meals.size())
+                .meals(mealDtos)
                 .build();
     }
 }
