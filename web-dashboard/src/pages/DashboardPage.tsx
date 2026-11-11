@@ -7,9 +7,9 @@ import { WeeklyCalorieMiniChart, DayCalorieData } from '../components/WeeklyCalo
 import { MacroBadge } from '../components/MacroBadge';
 import { FavoriteMealsQuickWidget } from '../components/FavoriteMealsQuickWidget';
 import { api } from '../services/api';
-import { DailySummary, MealType, MealAnalysisResponse, CreateMealRequest, MealItem } from '../types';
+import { DailySummary, Meal, MealType, MealAnalysisResponse, CreateMealRequest, MealItem } from '../types';
 import { toLocalISODate, shiftISODate } from '../utils/formatters';
-import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Sparkles, Utensils, Plus, Trash2, Calendar, Heart, ChevronLeft, ChevronRight, RefreshCw, Pencil } from 'lucide-react';
 
 interface MealCategoryConfig {
   type: MealType;
@@ -58,6 +58,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'ai' | 'manual' | 'edit'>('ai');
+  const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSavingMeal, setIsSavingMeal] = useState(false);
   const [aiAnalysisResult, setAiAnalysisResult] = useState<MealAnalysisResponse | null>(null);
@@ -172,6 +174,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
     try {
       const res = await api.analyzeMealImage(file);
       if (res.success && res.data) {
+        setEditingMeal(null);
+        setModalMode('ai');
         setAiAnalysisResult(res.data);
         if (res.data.imageUrl) {
           setSelectedImagePreview(res.data.imageUrl);
@@ -187,6 +191,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleOpenManualModal = (mealType: MealType) => {
+    setEditingMeal(null);
+    setModalMode('manual');
+    setTargetMealTypeForScan(mealType);
+    setSelectedImagePreview('');
+    setAiAnalysisResult(null);
+    setIsAiModalOpen(true);
+  };
+
+  const handleOpenEditModal = (meal: Meal) => {
+    setEditingMeal(meal);
+    setModalMode('edit');
+    setTargetMealTypeForScan(meal.mealType);
+    setSelectedImagePreview(meal.imageUrl || '');
+    setAiAnalysisResult(null);
+    setIsAiModalOpen(true);
   };
 
   const handleQuickAddClick = (mealType: MealType) => {
@@ -207,6 +229,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
 
   const handleSaveMealFromAi = async (mealData: {
     name: string;
+    mealType: MealType;
     healthTip?: string;
     items: MealItem[];
     totalCalories: number;
@@ -217,11 +240,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
     try {
       setIsSavingMeal(true);
       const payload: CreateMealRequest = {
-        mealDate: selectedDate,
-        mealType: targetMealTypeForScan,
+        mealDate: editingMeal?.mealDate || selectedDate,
+        mealType: mealData.mealType,
         name: mealData.name,
-        imageUrl: aiAnalysisResult?.imageUrl || selectedImagePreview,
-        healthTip: mealData.healthTip || aiAnalysisResult?.healthTip,
+        imageUrl: editingMeal ? editingMeal.imageUrl : (aiAnalysisResult?.imageUrl || selectedImagePreview || undefined),
+        healthTip: mealData.healthTip || aiAnalysisResult?.healthTip || editingMeal?.healthTip,
         items: mealData.items.map((item) => ({
           name: item.name,
           estimatedWeightGrams: item.estimatedWeightGrams,
@@ -234,11 +257,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
         })),
       };
 
-      const res = await api.createMeal(payload);
+      const res = editingMeal?.id
+        ? await api.updateMeal(editingMeal.id, payload)
+        : await api.createMeal(payload);
       if (res.success) {
         setIsAiModalOpen(false);
+        setEditingMeal(null);
         // Tải lại dữ liệu tổng quan thật từ CSDL backend
-        await fetchDashboardData();
+        await fetchDashboardData(selectedDate);
       } else {
         alert(res.message || 'Không thể lưu bữa ăn');
       }
@@ -573,6 +599,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
                               </div>
 
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span className={`badge ${meal.imageUrl ? 'badge-ai' : 'badge-manual'}`} style={{ marginRight: '4px' }}>
+                                  {meal.imageUrl ? '✨ AI Scan' : '✍️ Thủ công'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditModal(meal)}
+                                  className="btn-icon"
+                                  title="Chỉnh sửa bữa ăn"
+                                  aria-label={`Chỉnh sửa bữa ăn ${meal.name}`}
+                                  style={{
+                                    padding: '6px',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--color-text-muted)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Pencil size={15} aria-hidden="true" />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleBookmarkFavorite(meal.id, meal.name)}
@@ -658,20 +704,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
                         ))}
 
                         {/* Button to add more items to this category */}
-                        <button
-                          type="button"
-                          onClick={() => handleQuickAddClick(category.type)}
-                          className="btn btn-outline"
-                          style={{
-                            fontSize: '12px',
-                            padding: '8px 14px',
-                            alignSelf: 'flex-start',
-                            borderRadius: 'var(--radius-md)'
-                          }}
-                        >
-                          <Plus size={14} />
-                          <span>Thêm món vào {category.title}</span>
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickAddClick(category.type)}
+                            className="btn btn-outline"
+                            style={{
+                              fontSize: '12px',
+                              padding: '8px 14px',
+                              borderRadius: 'var(--radius-md)'
+                            }}
+                          >
+                            <Plus size={14} />
+                            <span>Quét AI vào {category.title}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenManualModal(category.type)}
+                            className="btn btn-ghost"
+                            style={{
+                              fontSize: '12px',
+                              padding: '8px 12px',
+                              borderRadius: 'var(--radius-md)'
+                            }}
+                          >
+                            <span>✍️ Nhập thủ công</span>
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       /* Empty State for Meal Category */
@@ -698,19 +757,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
                             Chụp hoặc quét ảnh đĩa ăn để AI phân tích calo tức thì
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleQuickAddClick(category.type)}
-                          className="btn btn-primary"
-                          style={{
-                            fontSize: '12px',
-                            padding: '7px 14px',
-                            borderRadius: 'var(--radius-md)',
-                          }}
-                        >
-                          <Plus size={14} />
-                          <span>+ Thêm món nhanh</span>
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickAddClick(category.type)}
+                            className="btn btn-primary"
+                            style={{
+                              fontSize: '12px',
+                              padding: '7px 14px',
+                              borderRadius: 'var(--radius-md)',
+                            }}
+                          >
+                            <Plus size={14} />
+                            <span>Quét AI</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenManualModal(category.type)}
+                            className="btn btn-outline"
+                            style={{
+                              fontSize: '12px',
+                              padding: '7px 14px',
+                              borderRadius: 'var(--radius-md)',
+                            }}
+                          >
+                            <span>✍️ Nhập thủ công</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -772,14 +845,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToFavori
         </>
       )}
 
-      {/* Accessible AI Meal Review Modal */}
+      {/* Accessible AI Meal Review / Edit / Manual Modal */}
       <AiMealReviewModal
         isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
+        onClose={() => {
+          setIsAiModalOpen(false);
+          setEditingMeal(null);
+        }}
+        mode={modalMode}
         imagePreviewUrl={selectedImagePreview}
-        initialMealName={aiAnalysisResult?.suggestedMealName}
-        initialItems={aiAnalysisResult?.recognizedItems}
-        healthTip={aiAnalysisResult?.healthTip}
+        initialMealName={editingMeal ? editingMeal.name : aiAnalysisResult?.suggestedMealName}
+        initialMealType={editingMeal ? editingMeal.mealType : targetMealTypeForScan}
+        initialItems={editingMeal ? editingMeal.items : aiAnalysisResult?.recognizedItems}
+        healthTip={editingMeal ? editingMeal.healthTip : aiAnalysisResult?.healthTip}
         onSaveMeal={handleSaveMealFromAi}
         isSaving={isSavingMeal}
       />

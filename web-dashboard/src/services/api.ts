@@ -97,6 +97,11 @@ export const api = {
     return res.data;
   },
 
+  async updateMeal(id: number, mealData: Partial<CreateMealRequest>): Promise<ApiResponse<Meal>> {
+    const res = await apiClient.put<ApiResponse<Meal>>(`/meals/${id}`, mealData);
+    return res.data;
+  },
+
   async getDailyMeals(dateStr?: string) {
     const res = await apiClient.get<ApiResponse<Meal[]>>('/meals/daily', {
       params: { date: dateStr },
