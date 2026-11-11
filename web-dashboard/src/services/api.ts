@@ -15,7 +15,10 @@ import {
   User,
 } from '../types';
 
-export const BASE_API_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8080/api/v1';
+const rawApiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '');
+export const BASE_API_URL = rawApiBase
+  ? (rawApiBase.endsWith('/api/v1') ? rawApiBase : `${rawApiBase}/api/v1`)
+  : 'http://localhost:8080/api/v1';
 
 const apiClient = axios.create({
   baseURL: BASE_API_URL,
