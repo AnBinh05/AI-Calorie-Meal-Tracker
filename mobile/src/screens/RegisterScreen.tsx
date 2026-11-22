@@ -8,11 +8,12 @@ export const RegisterScreen = ({ navigation }: any) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
   const handleRegister = async () => {
-    if (!fullName || !email || !password) {
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ các thông tin');
       return;
     }
@@ -22,11 +23,16 @@ export const RegisterScreen = ({ navigation }: any) => {
       return;
     }
 
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không trùng khớp');
+      return;
+    }
+
     try {
       setLoading(true);
-      await register(fullName, email, password);
+      await register(fullName.trim(), email.trim(), password);
     } catch (e: any) {
-      Alert.alert('Đăng ký thất bại', e.message || 'Email này đã được sử dụng');
+      Alert.alert('Đăng ký thất bại', e.response?.data?.message || e.message || 'Email này đã được sử dụng');
     } finally {
       setLoading(false);
     }
@@ -66,6 +72,14 @@ export const RegisterScreen = ({ navigation }: any) => {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+            />
+
+            <CustomInput
+              label="Xác nhận mật khẩu"
+              placeholder="Nhập lại mật khẩu"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
             />
 
             <CustomButton

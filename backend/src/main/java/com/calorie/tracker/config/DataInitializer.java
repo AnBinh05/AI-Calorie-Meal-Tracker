@@ -194,7 +194,10 @@ public class DataInitializer implements CommandLineRunner {
         snack.recalculateTotals();
         mealRepository.save(snack);
 
-        // 4. Tạo Favorite Meals mẫu
+        // 4. Khởi tạo lịch sử bữa ăn 6 ngày trước để phục vụ biểu đồ xu hướng 7 ngày & nhật ký
+        seedPastDaysMeals(demoUser, today);
+
+        // 5. Tạo Favorite Meals mẫu
         FavoriteMeal fav1 = FavoriteMeal.builder()
                 .user(demoUser)
                 .name("Phở bò tái nạm gia truyền")
@@ -251,5 +254,81 @@ public class DataInitializer implements CommandLineRunner {
         favoriteMealRepository.save(fav2);
 
         log.info("✅ Đã khởi tạo xong dữ liệu mẫu NutriAI! Tài khoản Demo: demo@nutriai.vn / Mật khẩu: 123456");
+    }
+
+    private void seedPastDaysMeals(User user, LocalDate today) {
+        // Ngày -1: Bánh mì ốp la, Bún chả, Cá hồi áp chảo (~1520 kcal)
+        saveDailyTriplet(user, today.minusDays(1),
+                "Bánh mì ốp la xúc xích", MealType.BREAKFAST, 380, 16, 40, 18,
+                "Bún chả Hà Nội nướng than", MealType.LUNCH, 580, 36, 65, 20,
+                "Cá hồi áp chảo sốt bơ chanh", MealType.DINNER, 560, 44, 20, 32);
+
+        // Ngày -2: Yến mạch chuối, Cơm tấm sườn bì chả, Canh chua cá lóc (~1580 kcal)
+        saveDailyTriplet(user, today.minusDays(2),
+                "Yến mạch sữa tươi & chuối", MealType.BREAKFAST, 340, 14, 58, 6,
+                "Cơm tấm sườn nướng bì chả", MealType.LUNCH, 690, 42, 78, 24,
+                "Canh chua cá lóc & rau muống xào", MealType.DINNER, 550, 40, 35, 18);
+
+        // Ngày -3: Phở gà ta, Bún bò Huế, Salad ức gà (~1490 kcal)
+        saveDailyTriplet(user, today.minusDays(3),
+                "Phở gà ta lá chanh", MealType.BREAKFAST, 460, 32, 58, 12,
+                "Bún bò Huế giò nạc", MealType.LUNCH, 640, 42, 68, 22,
+                "Salad ức gà sốt mè rang", MealType.DINNER, 390, 38, 15, 16);
+
+        // Ngày -4: Bún mọc sườn, Cơm rang dưa bò, Ức gà nướng (~1570 kcal)
+        saveDailyTriplet(user, today.minusDays(4),
+                "Bún mọc sườn chua", MealType.BREAKFAST, 480, 28, 62, 14,
+                "Cơm rang dưa bò giòn", MealType.LUNCH, 630, 36, 76, 20,
+                "Ức gà áp chảo & khoai lang hấp", MealType.DINNER, 460, 48, 38, 8);
+
+        // Ngày -5: Hủ tiếu Nam Vang, Cơm niêu cá bống, Bò bít tết (~1680 kcal)
+        saveDailyTriplet(user, today.minusDays(5),
+                "Hủ tiếu Nam Vang tôm thịt", MealType.BREAKFAST, 520, 35, 66, 14,
+                "Cơm niêu cá kho tộ", MealType.LUNCH, 590, 34, 74, 16,
+                "Bò bít tết sốt tiêu đen & salad", MealType.DINNER, 570, 48, 28, 24);
+
+        // Ngày -6: Bánh cuốn chả, Cơm gà xối mỡ, Tôm rim thịt (~1610 kcal)
+        saveDailyTriplet(user, today.minusDays(6),
+                "Bánh cuốn nóng chả quế", MealType.BREAKFAST, 420, 18, 56, 14,
+                "Cơm gà sốt tỏi ớt", MealType.LUNCH, 660, 44, 72, 22,
+                "Tôm rim thịt ba chỉ & canh rau", MealType.DINNER, 530, 40, 38, 20);
+    }
+
+    private void saveDailyTriplet(User user, LocalDate date,
+                                  String bName, MealType bType, double bCal, double bPro, double bCarb, double bFat,
+                                  String lName, MealType lType, double lCal, double lPro, double lCarb, double lFat,
+                                  String dName, MealType dType, double dCal, double dPro, double dCarb, double dFat) {
+        saveSingleMeal(user, date, bName, bType, bCal, bPro, bCarb, bFat);
+        saveSingleMeal(user, date, lName, lType, lCal, lPro, lCarb, lFat);
+        saveSingleMeal(user, date, dName, dType, dCal, dPro, dCarb, dFat);
+    }
+
+    private void saveSingleMeal(User user, LocalDate date, String name, MealType type, double cal, double pro, double carb, double fat) {
+        Meal meal = Meal.builder()
+                .user(user)
+                .name(name)
+                .mealType(type)
+                .mealDate(date)
+                .notes("Bữa ăn theo kế hoạch dinh dưỡng chuẩn NutriAI")
+                .healthTip("Bữa ăn cân bằng dinh dưỡng, hỗ trợ chuyển hóa tốt.")
+                .items(new ArrayList<>())
+                .build();
+
+        MealItem item = MealItem.builder()
+                .meal(meal)
+                .name(name)
+                .estimatedWeightGrams(250.0)
+                .servingSize("1 phần chuẩn")
+                .calories(cal)
+                .protein(pro)
+                .carbs(carb)
+                .fat(fat)
+                .fiber(2.5)
+                .confidenceScore(0.95)
+                .build();
+
+        meal.addItem(item);
+        meal.recalculateTotals();
+        mealRepository.save(meal);
     }
 }

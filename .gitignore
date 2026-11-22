@@ -6,6 +6,10 @@ target/
 *.ear
 *.log
 uploads/
+data/
+*.db
+*.mv.db
+*.trace.db
 
 # Node / Frontend
 node_modules/

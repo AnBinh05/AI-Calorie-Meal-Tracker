@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/v1/meals")
@@ -40,8 +41,18 @@ public class MealController {
     public ResponseEntity<ApiResponse<MealAnalysisResponse>> analyzeMealImage(
             @RequestParam("image") MultipartFile image
     ) {
-        String storedImageUrl = storageService.storeFile(image);
-        MealAnalysisResponse analysis = geminiVisionService.analyzeMealImage(image, storedImageUrl);
+        // Tối ưu hóa hiệu năng: Thực thi song song Upload Supabase và Phân tích Gemini Vision
+        CompletableFuture<String> storageFuture = CompletableFuture.supplyAsync(() -> storageService.storeFile(image));
+        CompletableFuture<MealAnalysisResponse> aiFuture = CompletableFuture.supplyAsync(() -> geminiVisionService.analyzeMealImage(image, null));
+
+        CompletableFuture.allOf(storageFuture, aiFuture).join();
+
+        MealAnalysisResponse analysis = aiFuture.join();
+        String storedImageUrl = storageFuture.join();
+        if (analysis != null) {
+            analysis.setImageUrl(storedImageUrl);
+        }
+
         return ResponseEntity.ok(ApiResponse.ok("Phân tích món ăn thành công", analysis));
     }
 

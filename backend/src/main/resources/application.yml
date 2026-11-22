@@ -7,7 +7,7 @@ spring:
   application:
     name: ai-calorie-tracker
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:calorie_tracker_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/calorie_tracker_db;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE;MODE=PostgreSQL}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
@@ -35,7 +35,7 @@ jwt:
 
 gemini:
   api-key: ${GEMINI_API_KEY:}
-  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  model: ${GEMINI_MODEL:gemini-3.6-flash}
   api-url: https://generativelanguage.googleapis.com/v1beta/models
 
 supabase:

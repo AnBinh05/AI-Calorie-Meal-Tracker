@@ -98,3 +98,4 @@ class AnalyticsServiceTest {
         verify(healthProfileRepository, times(1)).findByUser(mockUser);
     }
 }
+
