@@ -1,9 +1,36 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { authStorage } from './authStorage';
-import { ApiResponse, DailySummary, HealthProfile, Meal, MealAnalysisResponse, User } from '../types';
+import {
+  ApiResponse,
+  DailySummary,
+  DateRangeSummary,
+  FavoriteMeal,
+  HealthProfile,
+  Meal,
+  MealAnalysisResponse,
+  MealType,
+  PageResponse,
+  QuickLogMealRequest,
+  User,
+} from '../types';
 
-// Trong môi trường development với Expo trên Android Emulator thường là 10.0.2.2:8080, iOS Simulator là localhost:8080, thiết bị thật là IP LAN
-export const BASE_API_URL = 'http://localhost:8080/api/v1';
+const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
+const defaultBaseUrl =
+  Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1';
+
+// Android Emulator trỏ localhost qua 10.0.2.2; thiết bị thật có thể đặt EXPO_PUBLIC_API_BASE_URL trong .env
+export const BASE_API_URL = envBaseUrl
+  ? envBaseUrl.endsWith('/api/v1')
+    ? envBaseUrl
+    : `${envBaseUrl}/api/v1`
+  : defaultBaseUrl;
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export const setUnauthorizedHandler = (handler: (() => void) | null) => {
+  unauthorizedHandler = handler;
+};
 
 const apiClient = axios.create({
   baseURL: BASE_API_URL,
@@ -22,6 +49,17 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error?.response?.status === 401) {
+      await authStorage.clearAuth();
+      unauthorizedHandler?.();
+    }
+    return Promise.reject(error);
+  }
 );
 
 export const api = {
@@ -81,6 +119,11 @@ export const api = {
     return res.data;
   },
 
+  async updateMeal(id: number, meal: Partial<Meal>) {
+    const res = await apiClient.put<ApiResponse<Meal>>(`/meals/${id}`, meal);
+    return res.data;
+  },
+
   async getDailyMeals(dateStr?: string) {
     const res = await apiClient.get<ApiResponse<Meal[]>>('/meals/daily', {
       params: { date: dateStr },
@@ -98,6 +141,38 @@ export const api = {
     const res = await apiClient.get<ApiResponse<DailySummary>>('/analytics/daily-summary', {
       params: { date: dateStr },
     });
+    return res.data;
+  },
+
+  async getRangeSummary(startDate?: string, endDate?: string) {
+    const res = await apiClient.get<ApiResponse<DateRangeSummary>>('/analytics/range', {
+      params: { startDate, endDate },
+    });
+    return res.data;
+  },
+
+  // Favorite Meals
+  async getFavoriteMeals(params?: { keyword?: string; mealType?: MealType; page?: number; size?: number }) {
+    const res = await apiClient.get<ApiResponse<PageResponse<FavoriteMeal>>>('/meals/favorites', {
+      params,
+    });
+    return res.data;
+  },
+
+  async createFavoriteFromMeal(mealId: number, customName?: string) {
+    const res = await apiClient.post<ApiResponse<FavoriteMeal>>(`/meals/favorites/from-meal/${mealId}`, null, {
+      params: { customName },
+    });
+    return res.data;
+  },
+
+  async quickLogFavoriteMeal(id: number, payload?: QuickLogMealRequest) {
+    const res = await apiClient.post<ApiResponse<Meal>>(`/meals/favorites/${id}/log`, payload || {});
+    return res.data;
+  },
+
+  async deleteFavoriteMeal(id: number) {
+    const res = await apiClient.delete<ApiResponse<null>>(`/meals/favorites/${id}`);
     return res.data;
   },
 };

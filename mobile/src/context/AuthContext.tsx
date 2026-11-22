@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authStorage } from '../services/authStorage';
-import { api } from '../services/api';
+import { api, setUnauthorizedHandler } from '../services/api';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -20,6 +20,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     checkLoggedInUser();
+    setUnauthorizedHandler(() => {
+      setUser(null);
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const checkLoggedInUser = async () => {

@@ -95,3 +95,51 @@ export interface ApiResponse<T> {
   data: T;
   timestamp: string;
 }
+
+export interface DateRangeSummary {
+  startDate: string;
+  endDate: string;
+  averageDailyCalories: number;
+  averageDailyProtein: number;
+  averageDailyCarbs: number;
+  averageDailyFat: number;
+  dailyCalorieTarget: number;
+  dailySummaries: DailySummary[];
+  macroDistributionPercent: {
+    proteinPercent: number;
+    carbsPercent: number;
+    fatPercent: number;
+  };
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface FavoriteMeal {
+  id: number;
+  name: string;
+  mealType: MealType;
+  mealTypeDisplayName?: string;
+  imageUrl?: string;
+  notes?: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  usageCount: number;
+  itemsCount: number;
+  items: MealItem[];
+  createdAt: string;
+}
+
+export interface QuickLogMealRequest {
+  mealDate?: string;
+  mealType?: MealType;
+  notes?: string;
+}
