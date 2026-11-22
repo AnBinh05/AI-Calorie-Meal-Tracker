@@ -38,9 +38,9 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
       const token = localStorage.getItem('ai_calorie_token');
-      if (token && token !== 'mock_jwt_token_demo_nutriai') {
+      if (token === 'mock_jwt_token_demo_nutriai' || error?.response?.status === 401) {
         localStorage.removeItem('ai_calorie_token');
         window.dispatchEvent(new CustomEvent('nutriai:unauthorized'));
       }
@@ -83,13 +83,23 @@ export const api = {
     formData.append('image', file);
 
     const token = localStorage.getItem('ai_calorie_token');
-    const res = await axios.post<ApiResponse<MealAnalysisResponse>>(`${BASE_API_URL}/meals/analyze`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: token ? `Bearer ${token}` : '',
-      },
-    });
-    return res.data;
+    try {
+      const res = await axios.post<ApiResponse<MealAnalysisResponse>>(`${BASE_API_URL}/meals/analyze`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
+      return res.data;
+    } catch (err: any) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        if (token === 'mock_jwt_token_demo_nutriai') {
+          localStorage.removeItem('ai_calorie_token');
+          window.dispatchEvent(new CustomEvent('nutriai:unauthorized'));
+        }
+      }
+      throw err;
+    }
   },
 
   async createMeal(mealData: CreateMealRequest): Promise<ApiResponse<Meal>> {

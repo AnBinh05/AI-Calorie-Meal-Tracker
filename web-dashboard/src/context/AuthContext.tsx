@@ -30,6 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuth = async () => {
     const token = localStorage.getItem('ai_calorie_token');
     if (token === 'mock_jwt_token_demo_nutriai') {
+      try {
+        const res = await api.login({ email: 'demo@nutriai.vn', password: '123456' });
+        if (res.success && res.data) {
+          localStorage.setItem('ai_calorie_token', res.data.token);
+          setUser(res.data.user);
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // Backend chưa sẵn sàng, giữ chế độ demo offline
+      }
       loginDemo();
       setIsLoading(false);
       return;
