@@ -23,7 +23,7 @@ public class GeminiVisionService {
     @Value("${gemini.api-key:}")
     private String apiKey;
 
-    @Value("${gemini.model:gemini-1.5-flash}")
+    @Value("${gemini.model:gemini-3.6-flash}")
     private String modelName;
 
     @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}")
@@ -44,10 +44,16 @@ public class GeminiVisionService {
             String mimeType = imageFile.getContentType() != null ? imageFile.getContentType() : "image/jpeg";
 
             String prompt = """
-                    Bạn là một chuyên gia dinh dưỡng và thị giác máy tính AI. Hãy phân tích bức ảnh món ăn này một cách chi tiết và ước tính dinh dưỡng.
+                    Bạn là một chuyên gia dinh dưỡng và thị giác máy tính AI hàng đầu. Hãy phân tích bức ảnh bữa ăn này một cách cẩn thận và cực kỳ chi tiết:
+                    1. Nhận diện chính xác tên món ăn (đặc biệt các món ăn Việt Nam như Cơm tấm, Phở, Bún bò, Bánh mì, Gà rán, Salad, v.v.).
+                    2. Bóc tách từng thành phần/món phụ có trong đĩa/bát (ví dụ: cơm trắng, sườn nướng, trứng ốp la, dưa leo, cà chua, nước mắm,...).
+                    3. Ước tính khối lượng thực tế (gram) theo trực quan khẩu phần người Việt.
+                    4. Tính toán chính xác Calories, Protein (g), Carbs (g), Fat (g), Fiber (g) cho từng món và tổng bữa ăn.
+                    5. Đưa ra 1 lời khuyên dinh dưỡng cụ thể, tích cực và hữu ích.
+
                     Trả về kết quả DUY NHẤT dưới dạng cấu trúc JSON hợp lệ (không kèm markdown thừa, không giải thích ngoài JSON) theo mẫu sau:
                     {
-                      "suggestedMealName": "Tên tổng quan bữa ăn",
+                      "suggestedMealName": "Tên món ăn hoặc bữa ăn",
                       "estimatedTotalCalories": 650.0,
                       "estimatedTotalProtein": 35.0,
                       "estimatedTotalCarbs": 70.0,
@@ -57,7 +63,7 @@ public class GeminiVisionService {
                         {
                           "name": "Tên món / thành phần 1",
                           "estimatedWeightGrams": 150.0,
-                          "servingSize": "1 bát nhỏ",
+                          "servingSize": "1 bát / 1 đĩa / 1 phần",
                           "calories": 200.0,
                           "protein": 5.0,
                           "carbs": 40.0,
@@ -124,17 +130,28 @@ public class GeminiVisionService {
                     MealAnalysisResponse analysisResponse = objectMapper.readValue(cleanedJson, MealAnalysisResponse.class);
                     analysisResponse.setImageUrl(imageUrl);
                     analysisResponse.setRawAiResponse(rawText);
+                    log.info("Gemini Vision nhận diện thành công món ăn: {} ({} món con)",
+                            analysisResponse.getSuggestedMealName(),
+                            analysisResponse.getRecognizedItems() != null ? analysisResponse.getRecognizedItems().size() : 0);
                     return analysisResponse;
                 }
             }
         } catch (Exception e) {
-            log.error("Lỗi parse JSON từ Gemini response: {}", e.getMessage());
+            log.error("Lỗi parse JSON từ Gemini response: {}", e.getMessage(), e);
         }
         return getFallbackAnalysis(imageUrl);
     }
 
     private String cleanJsonString(String raw) {
+        if (raw == null) {
+            return "{}";
+        }
         String trimmed = raw.trim();
+        int firstBrace = trimmed.indexOf('{');
+        int lastBrace = trimmed.lastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+            return trimmed.substring(firstBrace, lastBrace + 1).trim();
+        }
         if (trimmed.startsWith("```json")) {
             trimmed = trimmed.substring(7);
         } else if (trimmed.startsWith("```")) {
