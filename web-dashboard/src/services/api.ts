@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { compressImage } from '../utils/imageCompressor';
 import {
   ApiResponse,
   CreateFavoriteMealRequest,
@@ -79,8 +80,10 @@ export const api = {
 
   // Meals & AI Analysis
   async analyzeMealImage(file: File): Promise<ApiResponse<MealAnalysisResponse>> {
+    // Tối ưu hóa ảnh phía Client trước khi gửi (giảm 95% dung lượng truyền mạng)
+    const optimizedFile = await compressImage(file);
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('image', optimizedFile);
 
     const token = localStorage.getItem('ai_calorie_token');
     try {

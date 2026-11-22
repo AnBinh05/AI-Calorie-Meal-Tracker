@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,7 +31,14 @@ public class GeminiVisionService {
     private String apiUrl;
 
     private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = createDefaultRestTemplate();
+
+    private static RestTemplate createDefaultRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(4000);
+        factory.setReadTimeout(10000);
+        return new RestTemplate(factory);
+    }
 
     public MealAnalysisResponse analyzeMealImage(MultipartFile imageFile, String imageUrl) {
         if (apiKey == null || apiKey.isBlank()) {
@@ -92,10 +100,11 @@ public class GeminiVisionService {
             Map<String, Object> requestBody = Map.of(
                     "contents", List.of(contents),
                     "generationConfig", Map.of(
-                            "temperature", 0.2,
+                            "temperature", 0.1,
                             "topK", 32,
-                            "topP", 1.0,
-                            "maxOutputTokens", 2048
+                            "topP", 0.95,
+                            "maxOutputTokens", 1024,
+                            "thinkingConfig", Map.of("thinkingBudget", 0)
                     )
             );
 
@@ -128,7 +137,9 @@ public class GeminiVisionService {
                     String cleanedJson = cleanJsonString(rawText);
 
                     MealAnalysisResponse analysisResponse = objectMapper.readValue(cleanedJson, MealAnalysisResponse.class);
-                    analysisResponse.setImageUrl(imageUrl);
+                    if (imageUrl != null) {
+                        analysisResponse.setImageUrl(imageUrl);
+                    }
                     analysisResponse.setRawAiResponse(rawText);
                     log.info("Gemini Vision nhận diện thành công món ăn: {} ({} món con)",
                             analysisResponse.getSuggestedMealName(),
